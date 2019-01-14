@@ -55,3 +55,11 @@ INSERT INTO tipo_persona (nombre, activo) VALUES ('Personal Docente',true);
 INSERT INTO tipo_persona (nombre, activo) VALUES ('Personal Administrativo',true);
 
 
+
+
+INSERT INTO programasalud.persona (primer_nombre, primer_apellido, fecha_nacimiento, sexo)
+VALUES
+('Administrador','Administrador',str_to_date('01/08/2018','%d/%m/%Y'),'A');
+
+INSERT INTO programasalud.usuario (id_usuario,clave,id_persona,activo,cambiar_clave) VALUES
+('ps_admin','248e7becd1f5674c62a8c92af927b8cee38f639196cad08c179d95e7e5e4f340',1,TRUE,FALSE);
