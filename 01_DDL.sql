@@ -347,6 +347,7 @@ CREATE TABLE programasalud.estudiante_deportes
     cualidades_especiales     BOOLEAN NOT NULL,
     id_tipo_discapacidad      INT NULL,
     id_disciplina             INT NOT NULL,
+    semestre                  VARCHAR(6) NOT NULL,
     id_persona                INT NULL,
     activo                    BOOLEAN NOT NULL,
     PRIMARY KEY(id_estudiante_deportes)
