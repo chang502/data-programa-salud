@@ -1,10 +1,11 @@
-DROP FUNCTION IF EXISTS programasalud.initcap;
 
-CREATE FUNCTION programasalud.initcap(x varchar(50)) RETURNS varchar(50)
+
+DROP FUNCTION IF EXISTS programasalud.initcap //
+
+CREATE OR REPLACE FUNCTION programasalud.initcap(x varchar(50)) RETURNS varchar(50)
 BEGIN
     RETURN concat(upper(substr(trim(X), 1,1)), lower(substr(trim(X), 2)));
-END;
-
+END ;
 
 
 DROP PROCEDURE IF EXISTS programasalud.create_user ;

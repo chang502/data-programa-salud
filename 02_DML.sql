@@ -57,9 +57,15 @@ INSERT INTO tipo_persona (nombre, activo) VALUES ('Personal Administrativo',true
 
 
 
-INSERT INTO programasalud.persona (primer_nombre, primer_apellido, fecha_nacimiento, sexo)
+INSERT INTO programasalud.persona (primer_nombre, primer_apellido, fecha_nacimiento, sexo, email)
 VALUES
-('Administrador','Administrador',str_to_date('01/08/2018','%d/%m/%Y'),'A');
+('Administrador','Administrador',str_to_date('01/08/2018','%d/%m/%Y'),'A','saludfiusac@gmail.com');
 
 INSERT INTO programasalud.usuario (id_usuario,clave,id_persona,activo,cambiar_clave) VALUES
-('ps_admin','248e7becd1f5674c62a8c92af927b8cee38f639196cad08c179d95e7e5e4f340',1,TRUE,FALSE);
+('ps_admin','248e7becd1f5674c62a8c92af927b8cee38f639196cad08c179d95e7e5e4f340',
+ (select id_persona from persona where email='saludfiusac@gmail.com'),TRUE,FALSE);
+
+INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8701,TRUE);
+INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8702,TRUE);
+INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8703,TRUE);
+INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8704,TRUE);
