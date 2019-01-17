@@ -279,6 +279,21 @@ CREATE TABLE programasalud.bebedero
 
 
 
+
+DROP TABLE IF EXISTS programasalud.unidad_medida;
+
+CREATE TABLE programasalud.unidad_medida
+(
+    id_unidad_medida        INT AUTO_INCREMENT NOT NULL,
+    nombre                  VARCHAR(100) NOT NULL,
+    nombre_corto            VARCHAR(50) NOT NULL,
+    activo                  BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_unidad_medida)
+);
+
+
+
+
 DROP TABLE IF EXISTS programasalud.espacio_convivencia;
 
 CREATE TABLE programasalud.espacio_convivencia
@@ -286,12 +301,19 @@ CREATE TABLE programasalud.espacio_convivencia
     id_espacio_convivencia  INT AUTO_INCREMENT NOT NULL,
     nombre                  VARCHAR(100) NOT NULL,
     ubicacion               VARCHAR(250) NOT NULL,
-    espacio_area            DECIMAL(10,4) NOT NULL,
+    cantidad                DECIMAL(10,4) NOT NULL,
+    id_unidad_medida        INT NOT NULL,
+    anio                    INT NOT NULL,
+    costo                   DECIMAL(10,4) NOT NULL,
     estado                  VARCHAR(200) NOT NULL,
     observaciones           VARCHAR(1000),
-    activo                  BOOLEAN NOT NULL,
+    activo                  BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_espacio_convivencia)
 );
+
+ALTER TABLE programasalud.espacio_convivencia
+    ADD CONSTRAINT FK_espacio_convivencia_medida FOREIGN KEY(id_unidad_medida)
+        REFERENCES programasalud.unidad_medida (id_unidad_medida);
 
 
 

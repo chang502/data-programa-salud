@@ -1,20 +1,17 @@
 
 
-DROP FUNCTION IF EXISTS programasalud.initcap //
-
 CREATE OR REPLACE FUNCTION programasalud.initcap(x varchar(50)) RETURNS varchar(50)
 BEGIN
     RETURN concat(upper(substr(trim(X), 1,1)), lower(substr(trim(X), 2)));
 END ;
 
 
-DROP PROCEDURE IF EXISTS programasalud.create_user ;
 
-CREATE PROCEDURE programasalud.create_user (IN p_id_usuario VARCHAR(50), IN p_clave VARCHAR(64), IN p_primer_nombre VARCHAR(50), IN p_segundo_nombre VARCHAR(50),
+
+CREATE OR REPLACE PROCEDURE programasalud.create_user (IN p_id_usuario VARCHAR(50), IN p_clave VARCHAR(64), IN p_primer_nombre VARCHAR(50), IN p_segundo_nombre VARCHAR(50),
                                             IN p_primer_apellido VARCHAR(50), IN p_segundo_apellido VARCHAR(50), IN p_fecha_nacimiento VARCHAR(10),
                                             IN p_sexo VARCHAR(50), IN p_email VARCHAR(50), IN p_telefono VARCHAR(8), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
-
     DECLARE v_temp INT;
     DECLARE EXIT HANDLER FOR 1062
         BEGIN
@@ -55,7 +52,6 @@ BEGIN
     SET o_mensaje = 'Registro ingresado correctamente';
 
     COMMIT;
-
 END;
 
 
@@ -65,9 +61,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_users ;
 
-CREATE PROCEDURE programasalud.get_users()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_users()
 BEGIN
     SELECT
         u.id_usuario,
@@ -82,9 +78,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_user ;
 
-CREATE PROCEDURE programasalud.get_user(IN p_id_usuario VARCHAR(50))
+
+CREATE OR REPLACE PROCEDURE programasalud.get_user(IN p_id_usuario VARCHAR(50))
 BEGIN
     SELECT u.id_usuario, p.primer_nombre, p.segundo_nombre,
            p.primer_apellido, p.segundo_apellido,
@@ -103,9 +99,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_user;
 
-CREATE PROCEDURE programasalud.update_user(IN p_id_usuario VARCHAR(50), IN p_clave VARCHAR(64), IN p_primer_nombre VARCHAR(50), IN p_segundo_nombre VARCHAR(50),
+
+CREATE OR REPLACE PROCEDURE programasalud.update_user(IN p_id_usuario VARCHAR(50), IN p_clave VARCHAR(64), IN p_primer_nombre VARCHAR(50), IN p_segundo_nombre VARCHAR(50),
                                            IN p_primer_apellido VARCHAR(50), IN p_segundo_apellido VARCHAR(50), IN p_fecha_nacimiento VARCHAR(10),
                                            IN p_sexo VARCHAR(50), IN p_email VARCHAR(50), IN p_telefono VARCHAR(98), IN p_cambiar_clave VARCHAR(1), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -189,9 +185,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_user_roles ;
 
-CREATE PROCEDURE programasalud.get_user_roles(IN p_id_usuario VARCHAR(50))
+
+CREATE OR REPLACE PROCEDURE programasalud.get_user_roles(IN p_id_usuario VARCHAR(50))
 BEGIN
 
     SELECT u.id_usuario_rol, r.nombre_rol, r.descripcion_rol, u.activo
@@ -209,9 +205,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_user_role;
 
-CREATE PROCEDURE programasalud.update_user_role(IN p_id_usuario_rol VARCHAR(50), IN p_activo VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.update_user_role(IN p_id_usuario_rol VARCHAR(50), IN p_activo VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -256,9 +252,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.delete_user;
 
-CREATE PROCEDURE programasalud.delete_user(IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_user(IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -299,9 +295,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.create_doctor ;
 
-CREATE PROCEDURE programasalud.create_doctor (IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.create_doctor (IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
     DECLARE v_temp INT;
@@ -378,9 +374,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_doctores ;
 
-CREATE PROCEDURE programasalud.get_doctores()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_doctores()
 BEGIN
 
     SELECT
@@ -399,9 +395,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_doctor ;
 
-CREATE PROCEDURE programasalud.get_doctor(IN p_id_doctor INT(20))
+
+CREATE OR REPLACE PROCEDURE programasalud.get_doctor(IN p_id_doctor INT(20))
 BEGIN
 
     SELECT
@@ -416,9 +412,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_doctor ;
 
-CREATE PROCEDURE programasalud.update_doctor ( IN p_id_doctor INT, IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.update_doctor ( IN p_id_doctor INT, IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
     DECLARE v_temp INT;
@@ -479,9 +475,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.delete_doctor;
 
-CREATE PROCEDURE programasalud.delete_doctor(IN p_id_doctor INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_doctor(IN p_id_doctor INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -517,9 +513,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_doctores_especialidades ;
 
-CREATE PROCEDURE programasalud.get_doctores_especialidades(IN p_id_doctor VARCHAR(50))
+
+CREATE OR REPLACE PROCEDURE programasalud.get_doctores_especialidades(IN p_id_doctor VARCHAR(50))
 BEGIN
 
     SELECT id_doctor_especialidad, de.activo, e.especialidad
@@ -536,9 +532,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_doctor_especialidad;
 
-CREATE PROCEDURE programasalud.update_doctor_especialidad(IN p_id_doctor_especialidad VARCHAR(50), IN p_activo VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.update_doctor_especialidad(IN p_id_doctor_especialidad VARCHAR(50), IN p_activo VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -585,9 +581,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_tipos_medida ;
 
-CREATE PROCEDURE programasalud.get_tipos_medida()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_tipos_medida()
 BEGIN
 
     SELECT tdm.id_tipo_dato, tdm.tipo_dato
@@ -601,9 +597,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.create_measurement ;
 
-CREATE PROCEDURE programasalud.create_measurement (IN p_nombre VARCHAR(50), IN p_id_tipo_dato INT(20), IN p_unidad_medida VARCHAR(50), IN p_valor_minimo VARCHAR(50),
+
+CREATE OR REPLACE PROCEDURE programasalud.create_measurement (IN p_nombre VARCHAR(50), IN p_id_tipo_dato INT(20), IN p_unidad_medida VARCHAR(50), IN p_valor_minimo VARCHAR(50),
                                                    IN p_valor_maximo VARCHAR(50), IN p_obligatorio VARCHAR(1), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
@@ -658,9 +654,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_measurements;
 
-CREATE PROCEDURE programasalud.get_measurements()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_measurements()
 BEGIN
 
     SELECT
@@ -678,9 +674,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_measurement;
 
-CREATE PROCEDURE programasalud.get_measurement(IN p_id_medida INT)
+
+CREATE OR REPLACE PROCEDURE programasalud.get_measurement(IN p_id_medida INT)
 BEGIN
 
     SELECT
@@ -702,9 +698,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_measurement ;
 
-CREATE PROCEDURE programasalud.update_measurement ( IN p_id_medida INT(20), IN p_nombre VARCHAR(50), IN p_id_tipo_dato INT(20), IN p_unidad_medida VARCHAR(50), IN p_valor_minimo VARCHAR(50),
+
+CREATE OR REPLACE PROCEDURE programasalud.update_measurement ( IN p_id_medida INT(20), IN p_nombre VARCHAR(50), IN p_id_tipo_dato INT(20), IN p_unidad_medida VARCHAR(50), IN p_valor_minimo VARCHAR(50),
                                                     IN p_valor_maximo VARCHAR(50), IN p_obligatorio VARCHAR(1), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
@@ -766,9 +762,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.delete_measurement;
 
-CREATE PROCEDURE programasalud.delete_measurement(IN p_id_medida INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_measurement(IN p_id_medida INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -826,9 +822,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.create_clinic ;
 
-CREATE PROCEDURE programasalud.create_clinic (IN p_nombre VARCHAR(50), IN p_ubicacion VARCHAR(50), IN p_descripcion VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.create_clinic (IN p_nombre VARCHAR(50), IN p_ubicacion VARCHAR(50), IN p_descripcion VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
     DECLARE v_temp INT;
@@ -881,9 +877,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_clinics;
 
-CREATE PROCEDURE programasalud.get_clinics()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_clinics()
 BEGIN
 
     SELECT
@@ -899,9 +895,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_clinic;
 
-CREATE PROCEDURE programasalud.get_clinic(IN p_id_clinica INT)
+
+CREATE OR REPLACE PROCEDURE programasalud.get_clinic(IN p_id_clinica INT)
 BEGIN
 
     SELECT
@@ -921,9 +917,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_clinic ;
 
-CREATE PROCEDURE programasalud.update_clinic (IN p_id_clinica INT, IN p_nombre VARCHAR(50), IN p_ubicacion VARCHAR(50), IN p_descripcion VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.update_clinic (IN p_id_clinica INT, IN p_nombre VARCHAR(50), IN p_ubicacion VARCHAR(50), IN p_descripcion VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
     DECLARE v_temp INT;
@@ -982,9 +978,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.delete_clinic;
 
-CREATE PROCEDURE programasalud.delete_clinic(IN p_id_clinica INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_clinic(IN p_id_clinica INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -1023,9 +1019,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_clinica_doctores ;
 
-CREATE PROCEDURE programasalud.get_clinica_doctores(IN p_id_clinica VARCHAR(50))
+
+CREATE OR REPLACE PROCEDURE programasalud.get_clinica_doctores(IN p_id_clinica VARCHAR(50))
 BEGIN
 
     SELECT dc.id_clinica_doctor, CONCAT(TRIM(CONCAT(p.primer_nombre,' ',p.segundo_nombre)),' ',TRIM(CONCAT(p.primer_apellido,' ', p.segundo_apellido))) nombre,
@@ -1042,9 +1038,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_clinica_doctor;
 
-CREATE PROCEDURE programasalud.update_clinica_doctor(IN p_id_clinica_doctor VARCHAR(50), IN p_activo VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.update_clinica_doctor(IN p_id_clinica_doctor VARCHAR(50), IN p_activo VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -1086,9 +1082,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_clinica_medidas ;
 
-CREATE PROCEDURE programasalud.get_clinica_medidas(IN p_id_clinica VARCHAR(50))
+
+CREATE OR REPLACE PROCEDURE programasalud.get_clinica_medidas(IN p_id_clinica VARCHAR(50))
 BEGIN
 
     SELECT cm.id_clinica_medida, cm.activo, m.nombre, t.tipo_dato, m.valor_minimo, m.valor_maximo, if(m.obligatorio,'Sí','No') obligatorio
@@ -1107,9 +1103,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_clinica_medida;
 
-CREATE PROCEDURE programasalud.update_clinica_medida(IN p_id_clinica_medida VARCHAR(50), IN p_activo VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.update_clinica_medida(IN p_id_clinica_medida VARCHAR(50), IN p_activo VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -1145,16 +1141,15 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.do_login ;
 
-CREATE PROCEDURE programasalud.do_login(IN p_id_usuario VARCHAR(50), IN p_clave VARCHAR(64))
+
+CREATE OR REPLACE PROCEDURE programasalud.do_login(IN p_id_usuario VARCHAR(50), IN p_clave VARCHAR(64))
 BEGIN
-
     SELECT u.id_usuario,
-           TRIM(CONCAT(p.primer_nombre,' ',p.segundo_nombre)) nombres,
-           TRIM(CONCAT(p.primer_apellido,' ', p.segundo_apellido)) apellidos,
-           CONCAT(TRIM(CONCAT(p.primer_nombre,' ',p.segundo_nombre)),' ',TRIM(CONCAT(p.primer_apellido,' ', p.segundo_apellido))) nombre,
-           p.email, p.telefono,
+           TRIM(CONCAT(p.primer_nombre,' ',COALESCE(p.segundo_nombre,''))) nombres,
+           TRIM(CONCAT(p.primer_apellido,' ', COALESCE(p.segundo_apellido,''))) apellidos,
+           CONCAT(TRIM(CONCAT(p.primer_nombre,' ',COALESCE(p.segundo_nombre,''))),' ',TRIM(CONCAT(p.primer_apellido,' ', COALESCE(p.segundo_apellido,'')))) nombre,
+           COALESCE(p.email,'') email, COALESCE(p.telefono,'') telefono,
            COALESCE((SELECT TRUE FROM usuario_rol ur1 WHERE ur1.id_usuario=u.id_usuario AND ur1.activo AND ur1.id_rol=8701),FALSE) hasClinica,
            COALESCE((SELECT TRUE FROM usuario_rol ur1 WHERE ur1.id_usuario=u.id_usuario AND ur1.activo AND ur1.id_rol=8702),FALSE) hasDeportes,
            COALESCE((SELECT TRUE FROM usuario_rol ur1 WHERE ur1.id_usuario=u.id_usuario AND ur1.activo AND ur1.id_rol=8703),FALSE) hasProgramaSalud,
@@ -1165,14 +1160,13 @@ BEGIN
     WHERE u.activo
       AND u.id_usuario=p_id_usuario
       AND u.clave=p_clave;
-
 END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.do_password_reset ;
 
-CREATE PROCEDURE programasalud.do_password_reset(IN p_id_usuario VARCHAR(50), IN p_email VARCHAR(50), IN p_clave VARCHAR(64), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.do_password_reset(IN p_id_usuario VARCHAR(50), IN p_email VARCHAR(50), IN p_clave VARCHAR(64), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -1226,9 +1220,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.do_password_change ;
 
-CREATE PROCEDURE programasalud.do_password_change(IN p_id_usuario VARCHAR(50), IN p_clave VARCHAR(64), IN p_nueva_clave VARCHAR(64), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.do_password_change(IN p_id_usuario VARCHAR(50), IN p_clave VARCHAR(64), IN p_nueva_clave VARCHAR(64), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -1287,9 +1281,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_semesters;
 
-CREATE PROCEDURE programasalud.get_semesters()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_semesters()
 BEGIN
 
     SELECT DISTINCT anio, semestre FROM (
@@ -1307,9 +1301,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.create_discipline ;
 
-CREATE PROCEDURE programasalud.create_discipline (IN p_nombre VARCHAR(100), IN p_limite INT, IN p_semestre VARCHAR(6), IN p_primer_nombre VARCHAR(50), IN p_segundo_nombre VARCHAR(50),
+
+CREATE OR REPLACE PROCEDURE programasalud.create_discipline (IN p_nombre VARCHAR(100), IN p_limite INT, IN p_semestre VARCHAR(6), IN p_primer_nombre VARCHAR(50), IN p_segundo_nombre VARCHAR(50),
                                                   IN p_primer_apellido VARCHAR(50), IN p_segundo_apellido VARCHAR(50), IN p_fecha_nacimiento VARCHAR(10),
                                                   IN p_sexo VARCHAR(50), IN p_email VARCHAR(50), IN p_telefono VARCHAR(8), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -1363,9 +1357,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_disciplines;
 
-CREATE PROCEDURE programasalud.get_disciplines()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_disciplines()
 BEGIN
 
     SELECT
@@ -1385,9 +1379,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_discipline;
 
-CREATE PROCEDURE programasalud.get_discipline(IN p_id_disciplina INT)
+
+CREATE OR REPLACE PROCEDURE programasalud.get_discipline(IN p_id_disciplina INT)
 BEGIN
 
     SELECT
@@ -1419,9 +1413,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_discipline ;
 
-CREATE PROCEDURE programasalud.update_discipline ( IN p_id_disciplina INT, IN p_nombre VARCHAR(100), IN p_semestre VARCHAR(6), IN p_limite INT,
+
+CREATE OR REPLACE PROCEDURE programasalud.update_discipline ( IN p_id_disciplina INT, IN p_nombre VARCHAR(100), IN p_semestre VARCHAR(6), IN p_limite INT,
                                                    IN p_id_persona INT, IN p_primer_nombre VARCHAR(50), IN p_segundo_nombre VARCHAR(50),
                                                    IN p_primer_apellido VARCHAR(50), IN p_segundo_apellido VARCHAR(50), IN p_fecha_nacimiento VARCHAR(10),
                                                    IN p_sexo VARCHAR(50), IN p_email VARCHAR(50), IN p_telefono VARCHAR(8),
@@ -1496,9 +1490,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.delete_discipline;
 
-CREATE PROCEDURE programasalud.delete_discipline(IN p_id_disciplina INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_discipline(IN p_id_disciplina INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -1544,9 +1538,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.create_drinkfountain;
 
-CREATE PROCEDURE programasalud.create_drinkfountain (IN p_nombre VARCHAR(100), IN p_ubicacion VARCHAR(250), IN p_fecha_mantenimiento VARCHAR(10),
+
+CREATE OR REPLACE PROCEDURE programasalud.create_drinkfountain (IN p_nombre VARCHAR(100), IN p_ubicacion VARCHAR(250), IN p_fecha_mantenimiento VARCHAR(10),
                                                      IN p_estado VARCHAR(200), IN p_observaciones VARCHAR(1000), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
@@ -1594,9 +1588,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_drinkfountains;
 
-CREATE PROCEDURE programasalud.get_drinkfountains()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_drinkfountains()
 BEGIN
 
     SELECT
@@ -1616,9 +1610,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_drinkfountain;
 
-CREATE PROCEDURE programasalud.get_drinkfountain(IN p_id_bebedero INT)
+
+CREATE OR REPLACE PROCEDURE programasalud.get_drinkfountain(IN p_id_bebedero INT)
 BEGIN
 
     SELECT
@@ -1639,9 +1633,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_drinkfountain ;
 
-CREATE PROCEDURE programasalud.update_drinkfountain ( IN p_id_bebedero INT, IN p_nombre VARCHAR(100), IN p_ubicacion VARCHAR(250), IN p_fecha_mantenimiento VARCHAR(10),
+
+CREATE OR REPLACE PROCEDURE programasalud.update_drinkfountain ( IN p_id_bebedero INT, IN p_nombre VARCHAR(100), IN p_ubicacion VARCHAR(250), IN p_fecha_mantenimiento VARCHAR(10),
                                                       IN p_estado VARCHAR(200), IN p_observaciones VARCHAR(1000),
                                                       OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -1703,9 +1697,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.delete_drinkfountain;
 
-CREATE PROCEDURE programasalud.delete_drinkfountain(IN p_id_bebedero INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_drinkfountain(IN p_id_bebedero INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -1752,6 +1746,17 @@ END;
 
 
 
+CREATE OR REPLACE PROCEDURE programasalud.get_measurement_units()
+BEGIN
+
+    SELECT
+           u.id_unidad_medida,
+           u.nombre,
+           u.nombre_corto
+    FROM programasalud.unidad_medida u
+    WHERE u.activo;
+
+END;
 
 
 
@@ -1760,10 +1765,19 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.create_playground;
 
-CREATE PROCEDURE programasalud.create_playground (IN p_nombre VARCHAR(100), IN p_ubicacion VARCHAR(250), IN p_espacio_area DECIMAL(10,4),
-                                                  IN p_estado VARCHAR(200), IN p_observaciones VARCHAR(1000), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.create_playground (IN p_nombre VARCHAR(100), IN p_ubicacion VARCHAR(250), IN p_cantidad DECIMAL(10,4), IN p_id_unidad_medida INT,
+                                                  IN p_anio INT, IN p_costo DECIMAL(10,4), IN p_estado VARCHAR(200), IN p_observaciones VARCHAR(1000),
+                                                  OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
     DECLARE v_temp INT;
@@ -1787,11 +1801,9 @@ BEGIN
 
     START TRANSACTION;
 
-    INSERT INTO programasalud.espacio_convivencia (nombre,
-                                                   ubicacion, espacio_area, observaciones,
-                                                   estado, activo)
-    VALUES ( INITCAP(p_nombre), INITCAP(p_ubicacion),
-             p_espacio_area, INITCAP(p_observaciones), INITCAP(p_estado), TRUE);
+    INSERT INTO programasalud.espacio_convivencia (nombre,ubicacion,cantidad,id_unidad_medida,anio,costo,estado,observaciones)
+    VALUES ( INITCAP(p_nombre), INITCAP(p_ubicacion), p_cantidad,
+             p_id_unidad_medida, p_anio, p_costo, INITCAP(p_estado), INITCAP(p_observaciones));
 
     SET o_result = LAST_INSERT_ID();
 
@@ -1810,20 +1822,26 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_playgrounds;
 
-CREATE PROCEDURE programasalud.get_playgrounds()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_playgrounds()
 BEGIN
-
     SELECT
         b.id_espacio_convivencia,
         b.nombre,
         b.ubicacion,
-        espacio_area,
+        b.cantidad,
+        um.id_unidad_medida,
+        um.nombre nombre_medida,
+        um.nombre_corto,
+        CONCAT(b.cantidad,' ', um.nombre_corto) cantidad_medida,
+        b.anio,
+        b.costo,
         b.estado,
         b.observaciones
     FROM
         espacio_convivencia b
+    JOIN unidad_medida um on b.id_unidad_medida = um.id_unidad_medida AND um.activo
     WHERE
         b.activo;
 
@@ -1832,20 +1850,26 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_playground;
 
-CREATE PROCEDURE programasalud.get_playground(IN p_id_espacio_convivencia INT)
+
+CREATE OR REPLACE PROCEDURE programasalud.get_playground(IN p_id_espacio_convivencia INT)
 BEGIN
 
     SELECT
         b.id_espacio_convivencia,
         b.nombre,
         b.ubicacion,
-        espacio_area,
+        b.cantidad,
+        um.id_unidad_medida,
+        um.nombre nombre_medida,
+        um.nombre_corto,
+        b.anio,
+        b.costo,
         b.estado,
         b.observaciones
     FROM
         espacio_convivencia b
+    JOIN unidad_medida um on b.id_unidad_medida = um.id_unidad_medida AND um.activo
     WHERE
         b.activo
       AND b.id_espacio_convivencia=p_id_espacio_convivencia;
@@ -1855,10 +1879,10 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_playground ;
 
-CREATE PROCEDURE programasalud.update_playground ( IN p_id_espacio_convivencia INT, IN p_nombre VARCHAR(100), IN p_ubicacion VARCHAR(250), IN p_espacio_area DECIMAL(10,4),
-                                                   IN p_estado VARCHAR(200), IN p_observaciones VARCHAR(1000),
+
+CREATE OR REPLACE PROCEDURE programasalud.update_playground ( IN p_id_espacio_convivencia INT, IN p_nombre VARCHAR(100), IN p_ubicacion VARCHAR(250), IN p_cantidad DECIMAL(10,4),
+                                                   IN p_id_unidad_medida INT, IN p_anio INT, IN p_costo DECIMAL(10,4), IN p_estado VARCHAR(200), IN p_observaciones VARCHAR(1000),
                                                    OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
@@ -1896,7 +1920,10 @@ BEGIN
         SET
             b.nombre = INITCAP(trim(p_nombre)),
             b.ubicacion = INITCAP(trim(p_ubicacion)),
-            b.espacio_area = p_espacio_area,
+            b.cantidad = p_cantidad,
+            b.id_unidad_medida = p_id_unidad_medida,
+            b.anio = p_anio,
+            b.costo = p_costo,
             b.estado = INITCAP(TRIM(p_estado)),
             b.observaciones = INITCAP(TRIM(p_observaciones))
         WHERE
@@ -1919,9 +1946,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.delete_playground;
 
-CREATE PROCEDURE programasalud.delete_playground(IN p_id_espacio_convivencia INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_playground(IN p_id_espacio_convivencia INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -1967,9 +1994,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_disability_types;
 
-CREATE PROCEDURE programasalud.get_disability_types()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_disability_types()
 BEGIN
 
     SELECT
@@ -1995,9 +2022,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_document_types;
 
-CREATE PROCEDURE programasalud.get_document_types()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_document_types()
 BEGIN
 
     SELECT
@@ -2021,9 +2048,9 @@ END;
 
 
 -- scripts para deportes
-DROP PROCEDURE IF EXISTS programasalud.inscripcion_deportes;
 
-CREATE PROCEDURE programasalud.inscripcion_deportes (IN p_id_tipo_documento VARCHAR(255), IN p_descripcion VARCHAR(255), IN p_especialidad VARCHAR(255),
+
+CREATE OR REPLACE PROCEDURE programasalud.inscripcion_deportes (IN p_id_tipo_documento VARCHAR(255), IN p_descripcion VARCHAR(255), IN p_especialidad VARCHAR(255),
                                                      IN p_estado VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
@@ -2076,9 +2103,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_students;
 
-CREATE PROCEDURE programasalud.get_students(IN p_id_tipo_documento INT, IN p_numero_documento VARCHAR(200), IN p_disciplina INT)
+
+CREATE OR REPLACE PROCEDURE programasalud.get_students(IN p_id_tipo_documento INT, IN p_numero_documento VARCHAR(200), IN p_disciplina INT)
 BEGIN
 
     SELECT
@@ -2108,9 +2135,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_student;
 
-CREATE PROCEDURE programasalud.get_student(IN p_id_estudiante_deportes INT)
+
+CREATE OR REPLACE PROCEDURE programasalud.get_student(IN p_id_estudiante_deportes INT)
 BEGIN
 
     SELECT
@@ -2139,9 +2166,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_student ;
 
-CREATE PROCEDURE programasalud.update_student ( IN p_id_estudiante_deportes INT, IN p_id_tipo_documento INT, IN p_numero_documento VARCHAR(200),
+
+CREATE OR REPLACE PROCEDURE programasalud.update_student ( IN p_id_estudiante_deportes INT, IN p_id_tipo_documento INT, IN p_numero_documento VARCHAR(200),
                                                 IN p_email VARCHAR(50), IN p_peso INT, IN p_estatura DECIMAL(5,2), IN p_cualidades_especiales VARCHAR(20), IN p_id_disciplina INT,
                                                 OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -2205,9 +2232,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.delete_student;
 
-CREATE PROCEDURE programasalud.delete_student(IN p_id_estudiante_deportes INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_student(IN p_id_estudiante_deportes INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -2267,9 +2294,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.create_team;
 
-CREATE PROCEDURE programasalud.create_team (IN p_nombre VARCHAR(255), IN p_descripcion VARCHAR(255), IN p_especialidad VARCHAR(255),
+
+CREATE OR REPLACE PROCEDURE programasalud.create_team (IN p_nombre VARCHAR(255), IN p_descripcion VARCHAR(255), IN p_especialidad VARCHAR(255),
                                             IN p_estado VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
@@ -2317,9 +2344,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_teams;
 
-CREATE PROCEDURE programasalud.get_teams()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_teams()
 BEGIN
 
     SELECT
@@ -2338,9 +2365,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_team;
 
-CREATE PROCEDURE programasalud.get_team(IN p_id_seleccion INT)
+
+CREATE OR REPLACE PROCEDURE programasalud.get_team(IN p_id_seleccion INT)
 BEGIN
 
     SELECT
@@ -2360,9 +2387,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_team ;
 
-CREATE PROCEDURE programasalud.update_team ( IN p_id_seleccion INT, IN p_nombre VARCHAR(255), IN p_descripcion VARCHAR(255), IN p_especialidad VARCHAR(255),
+
+CREATE OR REPLACE PROCEDURE programasalud.update_team ( IN p_id_seleccion INT, IN p_nombre VARCHAR(255), IN p_descripcion VARCHAR(255), IN p_especialidad VARCHAR(255),
                                              IN p_estado VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
@@ -2422,9 +2449,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.delete_team;
 
-CREATE PROCEDURE programasalud.delete_team(IN p_id_seleccion INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_team(IN p_id_seleccion INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -2472,9 +2499,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_person_types;
 
-CREATE PROCEDURE programasalud.get_person_types()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_person_types()
 BEGIN
 
     SELECT
@@ -2491,9 +2518,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.create_championship;
 
-CREATE PROCEDURE programasalud.create_championship (IN p_id_seleccion INT, IN p_nombre VARCHAR(255), IN p_fecha VARCHAR(10), IN p_victorioso VARCHAR(1),
+
+CREATE OR REPLACE PROCEDURE programasalud.create_championship (IN p_id_seleccion INT, IN p_nombre VARCHAR(255), IN p_fecha VARCHAR(10), IN p_victorioso VARCHAR(1),
                                                     IN p_observaciones VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
@@ -2541,9 +2568,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_championships;
 
-CREATE PROCEDURE programasalud.get_championships()
+
+CREATE OR REPLACE PROCEDURE programasalud.get_championships()
 BEGIN
 
     SELECT
@@ -2566,9 +2593,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.get_championship;
 
-CREATE PROCEDURE programasalud.get_championship(IN p_id_campeonato INT)
+
+CREATE OR REPLACE PROCEDURE programasalud.get_championship(IN p_id_campeonato INT)
 BEGIN
 
     SELECT
@@ -2592,9 +2619,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.update_championship ;
 
-CREATE PROCEDURE programasalud.update_championship ( IN p_id_campeonato INT, IN p_id_seleccion INT, IN p_nombre VARCHAR(255), IN p_fecha VARCHAR(10), IN p_victorioso VARCHAR(1),
+
+CREATE OR REPLACE PROCEDURE programasalud.update_championship ( IN p_id_campeonato INT, IN p_id_seleccion INT, IN p_nombre VARCHAR(255), IN p_fecha VARCHAR(10), IN p_victorioso VARCHAR(1),
                                                      IN p_observaciones VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
@@ -2656,9 +2683,9 @@ END;
 
 
 
-DROP PROCEDURE IF EXISTS programasalud.delete_championship;
 
-CREATE PROCEDURE programasalud.delete_championship(IN p_id_campeonato INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_championship(IN p_id_campeonato INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN

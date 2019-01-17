@@ -26,6 +26,11 @@ INSERT INTO programasalud.tipo_dato_medida (id_tipo_dato, tipo_dato, activo) VAL
 
 
 
+INSERT INTO programasalud.unidad_medida (nombre, nombre_corto) VALUES ('Metros lineales','m');
+INSERT INTO programasalud.unidad_medida (nombre, nombre_corto) VALUES ('Metros cuadrados','m²');
+INSERT INTO programasalud.unidad_medida (nombre, nombre_corto) VALUES ('Unidades','u');
+
+
 
 
 
