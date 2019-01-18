@@ -2722,3 +2722,112 @@ END;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.search_person(IN p_identificacion VARCHAR(50), IN p_nombre_completo VARCHAR(203), IN p_telefono_correo VARCHAR(50),IN p_fecha_nacimiento VARCHAR(10))
+BEGIN
+select p.id_persona, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
+       CONCAT(TRIM(CONCAT(p.primer_nombre,' ',p.segundo_nombre)),' ',TRIM(CONCAT(p.primer_apellido,' ', p.segundo_apellido))) nombre,
+       DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, sexo, email, telefono from persona p
+where lower(CONCAT(TRIM(CONCAT(p.primer_nombre,' ',COALESCE(p.segundo_nombre,''))),' ',TRIM(CONCAT(p.primer_apellido,' ', COALESCE(p.segundo_apellido,''))))) like CONCAT('%',lower(p_nombre_completo),'%')
+AND (p.telefono like CONCAT('%',p_telefono_correo,'%') OR p.email like CONCAT('%',p_telefono_correo,'%'))
+    limit 30;
+
+
+END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.assign_discipline (IN p_id_tipo_documento INT, IN p_numero_documento VARCHAR(200), IN p_email VARCHAR(50),
+                                            IN p_peso INT, IN p_estatura DECIMAL(5,2),
+                                            IN p_cualidades_especiales VARCHAR(1), IN p_id_tipo_discapacidad INT,
+                                            IN p_id_disciplina INT,
+                                                    OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+        END;
+
+    SET o_result = -1;
+
+    START TRANSACTION;
+
+    INSERT INTO estudiante_deportes (semestre, id_tipo_documento,numero_documento,
+                                     email,peso,estatura,cualidades_especiales,
+                                     id_tipo_discapacidad,id_disciplina,activo)
+                                     VALUES (CONCAT(IF(MONTH(NOW())<7,1,2),'S',YEAR(NOW())),
+                                    p_id_tipo_documento,p_numero_documento,p_email, p_peso,
+                                             p_estatura, if(p_cualidades_especiales='1',TRUE,FALSE), p_id_tipo_discapacidad, p_id_disciplina,true);
+
+    SET o_result = LAST_INSERT_ID();
+
+    SET o_mensaje = 'Registro ingresado correctamente';
+
+    COMMIT;
+
+END;
