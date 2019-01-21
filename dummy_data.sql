@@ -1,4 +1,4 @@
-INSERT INTO persona(primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, sexo, fecha_nacimiento, email,telefono)
+INSERT INTO programasalud.persona(primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, sexo, fecha_nacimiento, email,telefono)
 ('Paula','Marta','Gallego','Carrasco','F',str_to_date('5/2/1989','%d/%m/%Y'),'pgallego_1989@ingenieria.usac.edu.gt',57950864),
 ('Alberto','José','Diaz','Alonso','M',str_to_date('11/7/1988','%d/%m/%Y'),'adiaz.1988@ingenieria.usac.edu.gt',58774658),
 ('Iria','Eva','Ramos','Ortiz','F',str_to_date('10/2/2000','%d/%m/%Y'),'albertoramos_22000@yahoo.com',56361364),

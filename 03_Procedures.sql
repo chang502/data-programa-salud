@@ -63,23 +63,6 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.get_users()
-BEGIN
-    SELECT
-        u.id_usuario,
-        CONCAT(TRIM(CONCAT(p.primer_nombre,' ',p.segundo_nombre)),' ',TRIM(CONCAT(p.primer_apellido,' ', p.segundo_apellido))) nombre,
-        p.email, if(u.activo,'Activo','Inactivo') activo
-    FROM usuario u
-             JOIN persona p ON u.id_persona=p.id_persona
-    WHERE u.activo;
-END;
-
-
-
-
-
-
-
 CREATE OR REPLACE PROCEDURE programasalud.get_user(IN p_id_usuario VARCHAR(50))
 BEGIN
     SELECT u.id_usuario, p.primer_nombre, p.segundo_nombre,
@@ -2830,4 +2813,32 @@ BEGIN
 
     COMMIT;
 
+END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-------------------------------
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_users()
+BEGIN
+    SELECT
+        u.id_usuario,
+        CONCAT(TRIM(CONCAT(p.primer_nombre,' ',COALESCE(p.segundo_nombre,''))),' ',TRIM(CONCAT(p.primer_apellido,' ', COALESCE(p.segundo_apellido,'')))) nombre,
+        p.email, if(u.activo,'Activo','Inactivo') activo
+    FROM usuario u
+             JOIN persona p ON u.id_persona=p.id_persona
+    WHERE u.activo;
 END;
