@@ -2722,19 +2722,6 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.search_person(IN p_identificacion VARCHAR(50), IN p_nombre_completo VARCHAR(203), IN p_telefono_correo VARCHAR(50),IN p_fecha_nacimiento VARCHAR(10))
-BEGIN
-select p.id_persona, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
-       CONCAT(TRIM(CONCAT(p.primer_nombre,' ',p.segundo_nombre)),' ',TRIM(CONCAT(p.primer_apellido,' ', p.segundo_apellido))) nombre,
-       DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, sexo, email, telefono from persona p
-where lower(CONCAT(TRIM(CONCAT(p.primer_nombre,' ',COALESCE(p.segundo_nombre,''))),' ',TRIM(CONCAT(p.primer_apellido,' ', COALESCE(p.segundo_apellido,''))))) like CONCAT('%',lower(p_nombre_completo),'%')
-AND (p.telefono like CONCAT('%',p_telefono_correo,'%') OR p.email like CONCAT('%',p_telefono_correo,'%'))
-    limit 30;
-
-
-END;
-
-
 
 
 
@@ -2829,7 +2816,7 @@ END;
 
 
 
--------------------------------
+/*-------------------------------*/
 
 
 CREATE OR REPLACE PROCEDURE programasalud.get_users()
@@ -2841,4 +2828,25 @@ BEGIN
     FROM usuario u
              JOIN persona p ON u.id_persona=p.id_persona
     WHERE u.activo;
+END;
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.search_person(IN p_identificacion VARCHAR(50), IN p_nombre_completo VARCHAR(203))
+BEGIN
+select p.id_persona, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
+       CONCAT(TRIM(CONCAT(p.primer_nombre,' ',p.segundo_nombre)),' ',TRIM(CONCAT(p.primer_apellido,' ', p.segundo_apellido))) nombre,
+       DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, sexo, email, telefono from persona p
+ where lower(CONCAT(TRIM(CONCAT(p.primer_nombre,' ',COALESCE(p.segundo_nombre,''))),' ',TRIM(CONCAT(p.primer_apellido,' ', COALESCE(p.segundo_apellido,''))))) like CONCAT('%',lower(p_nombre_completo),'%')
+    limit 30;
+
+
 END;
