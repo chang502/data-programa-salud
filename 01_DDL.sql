@@ -235,30 +235,6 @@ ALTER TABLE programasalud.clinica_medida
 
 
 
-DROP TABLE IF EXISTS programasalud.disciplina;
-
-CREATE TABLE programasalud.disciplina
-(
-    id_disciplina     INT AUTO_INCREMENT NOT NULL,
-    nombre            VARCHAR(100) NOT NULL,
-    limite            INT NOT NULL,
-    semestre          VARCHAR(6) NOT NULL,
-    id_persona        INT NOT NULL,
-    activo            BOOLEAN NOT NULL,
-    PRIMARY KEY(id_disciplina)
-);
-
-ALTER TABLE programasalud.disciplina
-    ADD CONSTRAINT FK_disciplina_persona FOREIGN KEY(id_persona)
-        REFERENCES programasalud.persona (id_persona) ON DELETE CASCADE;
-
-
-
-
-
-
-
-
 
 
 DROP TABLE IF EXISTS programasalud.bebedero;
@@ -321,17 +297,6 @@ ALTER TABLE programasalud.espacio_convivencia
 
 
 
-DROP TABLE IF EXISTS programasalud.tipo_documento;
-
-CREATE TABLE programasalud.tipo_documento
-(
-    id_tipo_documento       INT AUTO_INCREMENT NOT NULL,
-    nombre                  VARCHAR(250) NOT NULL,
-    activo                  BOOLEAN NOT NULL,
-    PRIMARY KEY(id_tipo_documento)
-);
-
-
 
 
 
@@ -351,46 +316,6 @@ CREATE TABLE programasalud.tipo_discapacidad
 
 
 
-
-
-
-
-
-DROP TABLE IF EXISTS programasalud.estudiante_deportes;
-
-CREATE TABLE programasalud.estudiante_deportes
-(
-    id_estudiante_deportes    INT AUTO_INCREMENT NOT NULL,
-    id_tipo_documento         INT NOT NULL,
-    numero_documento          VARCHAR(200),
-    email                     VARCHAR(50),
-    peso                      INT NOT NULL,
-    estatura                  DECIMAL(5,2) NOT NULL,
-    cualidades_especiales     BOOLEAN NOT NULL,
-    id_tipo_discapacidad      INT NULL,
-    id_disciplina             INT NOT NULL,
-    semestre                  VARCHAR(6) NOT NULL,
-    id_persona                INT NULL,
-    activo                    BOOLEAN NOT NULL,
-    PRIMARY KEY(id_estudiante_deportes)
-);
-
-ALTER TABLE programasalud.estudiante_deportes
-    ADD CONSTRAINT FK_estudiante_deportes_persona FOREIGN KEY(id_persona)
-        REFERENCES programasalud.persona (id_persona);
-
-ALTER TABLE programasalud.estudiante_deportes
-    ADD CONSTRAINT FK_estudiante_deportes_tipo_documento FOREIGN KEY(id_tipo_documento)
-        REFERENCES programasalud.tipo_documento (id_tipo_documento);
-
-ALTER TABLE programasalud.estudiante_deportes
-    ADD CONSTRAINT FK_estudiante_deportes_disciplina FOREIGN KEY(id_disciplina)
-        REFERENCES programasalud.disciplina (id_disciplina);
-
-
-ALTER TABLE programasalud.estudiante_deportes
-    ADD CONSTRAINT FK_estudiante_deportes_tipo_discapacidad FOREIGN KEY(id_tipo_discapacidad)
-        REFERENCES programasalud.tipo_discapacidad (id_tipo_discapacidad);
 
 
 
@@ -471,3 +396,138 @@ ALTER TABLE programasalud.campeonato
 
 
 
+/*-------------------------------------------------------------*/
+-- delete from estudiante_deportes;
+-- delete from tipo_documento;
+
+
+-- DROP TABLE IF EXISTS programasalud.estudiante_deportes;
+DROP TABLE IF EXISTS programasalud.tipo_documento;
+
+CREATE TABLE programasalud.tipo_documento
+(
+    id_tipo_documento       INT AUTO_INCREMENT NOT NULL,
+    nombre                  VARCHAR(250) NOT NULL,
+    alcance                 VARCHAR(20) NOT NULL,
+    activo                  BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_tipo_documento)
+);
+
+
+
+
+
+
+
+
+
+
+delete from estudiante_deportes;
+delete from disciplina;
+
+
+DROP TABLE IF EXISTS programasalud.estudiante_deportes;
+DROP TABLE IF EXISTS programasalud.asignacion_deportes;
+DROP TABLE IF EXISTS programasalud.disciplina;
+
+CREATE TABLE programasalud.disciplina
+(
+    id_disciplina       INT AUTO_INCREMENT NOT NULL,
+    semestre            VARCHAR(6) NOT NULL,
+    nombre              VARCHAR(100) NOT NULL,
+    limite              INT NOT NULL,
+    flg_lunes           BOOLEAN NOT NULL DEFAULT FALSE,
+    flg_martes          BOOLEAN NOT NULL DEFAULT FALSE,
+    flg_miercoles       BOOLEAN NOT NULL DEFAULT FALSE,
+    flg_jueves          BOOLEAN NOT NULL DEFAULT FALSE,
+    flg_viernes         BOOLEAN NOT NULL DEFAULT FALSE,
+    flg_sabado          BOOLEAN NOT NULL DEFAULT FALSE,
+    hora_inicio         VARCHAR(5) NOT NULL,
+    hora_fin            VARCHAR(5) NOT NULL,
+    id_persona          INT NOT NULL,
+    activo              BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_disciplina)
+);
+
+ALTER TABLE programasalud.disciplina
+    ADD CONSTRAINT FK_disciplina_persona FOREIGN KEY(id_persona)
+        REFERENCES programasalud.persona (id_persona) ON DELETE CASCADE;
+
+
+
+
+
+
+
+
+
+
+
+DROP TABLE IF EXISTS programasalud.estudiante_deportes;
+DROP TABLE IF EXISTS programasalud.asignacion_deportes;
+
+CREATE TABLE programasalud.asignacion_deportes
+(
+    id_estudiante_deportes    INT AUTO_INCREMENT NOT NULL,
+    id_tipo_documento         INT NOT NULL,
+    numero_documento          VARCHAR(200),
+    email                     VARCHAR(50),
+    peso                      INT NOT NULL,
+    estatura                  DECIMAL(5,2) NOT NULL,
+    cualidades_especiales     BOOLEAN NOT NULL,
+    id_tipo_discapacidad      INT NULL,
+    id_disciplina             INT NOT NULL,
+    semestre                  VARCHAR(6) NOT NULL,
+    id_persona                INT NOT NULL,
+    activo                    BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_estudiante_deportes)
+);
+
+ALTER TABLE programasalud.asignacion_deportes
+    ADD CONSTRAINT FK_estudiante_deportes_persona FOREIGN KEY(id_persona)
+        REFERENCES programasalud.persona (id_persona);
+
+ALTER TABLE programasalud.asignacion_deportes
+    ADD CONSTRAINT FK_estudiante_deportes_tipo_documento FOREIGN KEY(id_tipo_documento)
+        REFERENCES programasalud.tipo_documento (id_tipo_documento);
+
+ALTER TABLE programasalud.asignacion_deportes
+    ADD CONSTRAINT FK_estudiante_deportes_disciplina FOREIGN KEY(id_disciplina)
+        REFERENCES programasalud.disciplina (id_disciplina);
+
+
+ALTER TABLE programasalud.asignacion_deportes
+    ADD CONSTRAINT FK_estudiante_deportes_tipo_discapacidad FOREIGN KEY(id_tipo_discapacidad)
+        REFERENCES programasalud.tipo_discapacidad (id_tipo_discapacidad);
+
+
+
+
+
+
+
+
+
+
+
+
+
+DROP TABLE IF EXISTS programasalud.identificacion_persona;
+
+CREATE TABLE programasalud.identificacion_persona
+(
+    id_identificacion_persona       INT AUTO_INCREMENT NOT NULL,
+    id_persona                      INT NOT NULL,
+    id_tipo_documento               INT NOT NULL,
+    numero_documento                BIGINT,
+    activo                          BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_identificacion_persona)
+);
+
+ALTER TABLE programasalud.identificacion_persona
+    ADD CONSTRAINT FK_identificacion_persona_persona FOREIGN KEY(id_persona)
+        REFERENCES programasalud.persona (id_persona);
+
+ALTER TABLE programasalud.identificacion_persona
+    ADD CONSTRAINT FK_identificacion_persona_tipo_documento FOREIGN KEY(id_tipo_documento)
+        REFERENCES programasalud.tipo_documento (id_tipo_documento);

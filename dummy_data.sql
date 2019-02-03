@@ -999,3 +999,15 @@ INSERT INTO programasalud.persona(primer_nombre, segundo_nombre, primer_apellido
 ('Jimena','Claudia','Prieto','Gallardo','F',str_to_date('4/6/2000','%d/%m/%Y'),'andreaprieto_62000@hotmail.com',58331228),
 ('Rubén','Guillermo','Guerrero','Sanz','M',str_to_date('6/8/1987','%d/%m/%Y'),'rguerrero_1987@ingenieria.usac.edu.gt',57991579),
 ('Naiara','Sofía','Soto','Jiménez','F',str_to_date('4/4/1989','%d/%m/%Y'),'rubensoto_41989@yahoo.com',56871011);
+
+
+
+
+
+
+
+
+
+
+insert into identificacion_persona (id_persona, id_tipo_documento, numero_documento)
+select id_persona, (id_persona%4)+13 , FLOOR(RAND()*(200000000-201999999))+201999999  from persona;

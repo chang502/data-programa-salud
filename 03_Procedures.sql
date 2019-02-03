@@ -1286,56 +1286,6 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.create_discipline (IN p_nombre VARCHAR(100), IN p_limite INT, IN p_semestre VARCHAR(6), IN p_primer_nombre VARCHAR(50), IN p_segundo_nombre VARCHAR(50),
-                                                  IN p_primer_apellido VARCHAR(50), IN p_segundo_apellido VARCHAR(50), IN p_fecha_nacimiento VARCHAR(10),
-                                                  IN p_sexo VARCHAR(50), IN p_email VARCHAR(50), IN p_telefono VARCHAR(8), OUT o_result INT, OUT o_mensaje VARCHAR(100))
-BEGIN
-
-    DECLARE v_temp INT;
-    DECLARE EXIT HANDLER FOR 1062
-        BEGIN
-            SET o_result=-1;
-            SET o_mensaje='El registro ya existe';
-            ROLLBACK;
-        END;
-
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-        BEGIN
-            GET DIAGNOSTICS CONDITION 1
-                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
-            ROLLBACK;
-            SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
-        END;
-
-    SET v_temp = -1;
-
-    START TRANSACTION;
-
-    INSERT INTO programasalud.persona (primer_nombre,
-                                       segundo_nombre, primer_apellido, segundo_apellido,
-                                       fecha_nacimiento, sexo, email, telefono)
-    VALUES ( INITCAP(p_primer_nombre), INITCAP(p_segundo_nombre),
-             INITCAP(p_primer_apellido), INITCAP(p_segundo_apellido), str_to_date(p_fecha_nacimiento,'%d/%m/%Y'), UPPER(p_sexo), LOWER(p_email), p_telefono);
-
-    SET v_temp = LAST_INSERT_ID();
-    SET o_result = v_temp;
-
-
-
-
-
-    INSERT INTO programasalud.disciplina (nombre, limite, semestre, id_persona, activo)
-    VALUES ( initcap(p_nombre), p_limite, upper(p_semestre), v_temp, TRUE);
-
-    SET o_result = LAST_INSERT_ID();
-
-    SET o_mensaje = 'Registro ingresado correctamente';
-
-    COMMIT;
-
-END;
-
 
 
 
@@ -1998,26 +1948,6 @@ END;
 
 
 
-
-
-
-
-
-
-
-
-
-CREATE OR REPLACE PROCEDURE programasalud.get_document_types()
-BEGIN
-
-    SELECT
-        t.id_tipo_documento,
-        t.nombre
-    FROM
-        tipo_documento t
-    WHERE
-        t.activo;
-END;
 
 
 
@@ -2834,9 +2764,77 @@ END;
 
 
 
+CREATE OR REPLACE PROCEDURE programasalud.get_student_document_types()
+BEGIN
+
+    SELECT
+        t.id_tipo_documento,
+        t.nombre,
+           t.alcance
+    FROM
+        tipo_documento t
+    WHERE
+        t.alcance in ('Estudiante','General')
+        AND t.activo;
+END;
 
 
 
+CREATE OR REPLACE PROCEDURE programasalud.get_employee_document_types()
+BEGIN
+
+    SELECT
+        t.id_tipo_documento,
+        t.nombre,
+           t.alcance
+    FROM
+        tipo_documento t
+    WHERE
+        t.alcance in ('Empleado','General')
+        AND t.activo;
+END;
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_document_types()
+BEGIN
+
+    SELECT
+        t.id_tipo_documento,
+        t.nombre,
+           t.alcance
+    FROM
+        tipo_documento t
+    WHERE
+        t.activo;
+END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_search_person_count (IN p_identificacion VARCHAR(50), IN p_nombre_completo VARCHAR(203))
+BEGIN
+
+select count(1) result from programasalud.persona p
+ where lower(CONCAT(TRIM(CONCAT(p.primer_nombre,' ',COALESCE(p.segundo_nombre,''))),' ',TRIM(CONCAT(p.primer_apellido,' ', COALESCE(p.segundo_apellido,''))))) like CONCAT('%',lower(p_nombre_completo),'%')
+;
+END;
 
 
 
@@ -2847,6 +2845,140 @@ select p.id_persona, primer_nombre, segundo_nombre, primer_apellido, segundo_ape
        DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, sexo, email, telefono from persona p
  where lower(CONCAT(TRIM(CONCAT(p.primer_nombre,' ',COALESCE(p.segundo_nombre,''))),' ',TRIM(CONCAT(p.primer_apellido,' ', COALESCE(p.segundo_apellido,''))))) like CONCAT('%',lower(p_nombre_completo),'%')
     limit 30;
+END;
 
 
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_search_person_by_id_number_count (IN p_identificacion VARCHAR(50))
+BEGIN
+select count(1) result from programasalud.identificacion_persona ip
+ where ip.activo and concat(ip.numero_documento,'') like CONCAT('%',lower(p_identificacion),'%');
+END;
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.search_person_by_id_number(IN p_identificacion VARCHAR(50))
+BEGIN
+select ip.numero_documento,td.nombre tipo_documento, p.id_persona, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
+       CONCAT(TRIM(CONCAT(p.primer_nombre,' ',p.segundo_nombre)),' ',TRIM(CONCAT(p.primer_apellido,' ', p.segundo_apellido))) nombre,
+       DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, sexo, email, telefono
+from persona p
+inner join identificacion_persona ip on p.id_persona = ip.id_persona and ip.activo
+join tipo_documento td on ip.id_tipo_documento = td.id_tipo_documento
+where concat(ip.numero_documento,'') like CONCAT('%',lower(p_identificacion),'%')
+limit 30;
+END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+CREATE TABLE programasalud.disciplina
+(
+    id_disciplina       INT AUTO_INCREMENT NOT NULL,
+    semestre            VARCHAR(6) NOT NULL,
+    nombre              VARCHAR(100) NOT NULL,
+    limite              INT NOT NULL,
+    flg_lunes           BOOLEAN NOT NULL DEFAULT FALSE,
+    flg_martes          BOOLEAN NOT NULL DEFAULT FALSE,
+    flg_miercoles       BOOLEAN NOT NULL DEFAULT FALSE,
+    flg_jueves          BOOLEAN NOT NULL DEFAULT FALSE,
+    flg_viernes         BOOLEAN NOT NULL DEFAULT FALSE,
+    flg_sabado          BOOLEAN NOT NULL DEFAULT FALSE,
+    hora_inicio         VARCHAR(5) NOT NULL,
+    hora_fin            VARCHAR(5) NOT NULL,
+    id_persona          INT NOT NULL,
+    activo              BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_disciplina)
+);
+
+ */
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.create_discipline (IN p_semestre VARCHAR(6), IN p_nombre VARCHAR(100), IN p_limite INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+        END;
+
+    SET v_temp = -1;
+
+    START TRANSACTION;
+
+    INSERT INTO programasalud.persona (primer_nombre,
+                                       segundo_nombre, primer_apellido, segundo_apellido,
+                                       fecha_nacimiento, sexo, email, telefono)
+    VALUES ( INITCAP(p_primer_nombre), INITCAP(p_segundo_nombre),
+             INITCAP(p_primer_apellido), INITCAP(p_segundo_apellido), str_to_date(p_fecha_nacimiento,'%d/%m/%Y'), UPPER(p_sexo), LOWER(p_email), p_telefono);
+
+    SET v_temp = LAST_INSERT_ID();
+    SET o_result = v_temp;
+
+
+
+
+
+    INSERT INTO programasalud.disciplina (nombre, limite, semestre, id_persona, activo)
+    VALUES ( initcap(p_nombre), p_limite, upper(p_semestre), v_temp, TRUE);
+
+    SET o_result = LAST_INSERT_ID();
+
+    SET o_mensaje = 'Registro ingresado correctamente';
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_active_disciplines ()
+BEGIN
+SELECT d.id_disciplina, d.nombre, count(ed.id_disciplina), d.limite, d.semestre FROM disciplina d
+left join estudiante_deportes ed on d.id_disciplina = ed.id_disciplina
+WHERE d.activo and coalesce(ed.activo,true) and  d.semestre=CONCAT(IF(MONTH(NOW())<7,1,2),'S',YEAR(NOW()))
+group by d.id_disciplina, d.nombre, d.limite, d.semestre having count(ed.id_disciplina)<d.limite
+ORDER BY d.nombre;
 END;

@@ -34,9 +34,6 @@ INSERT INTO programasalud.unidad_medida (nombre, nombre_corto) VALUES ('Unidades
 
 
 
-INSERT INTO tipo_documento (nombre, activo) VALUES ('Registro Académico',true);
-INSERT INTO tipo_documento (nombre, activo) VALUES ('Número de Orientación Vocacional',true);
-INSERT INTO tipo_documento (nombre, activo) VALUES ('DPI',true);
 
 
 
@@ -74,3 +71,12 @@ INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8701,TRUE);
 INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8702,TRUE);
 INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8703,TRUE);
 INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8704,TRUE);
+
+
+
+/*-----------------------------------------*/
+
+INSERT INTO tipo_documento (nombre, alcance) VALUES ('Registro Académico','Estudiante');
+INSERT INTO tipo_documento (nombre, alcance) VALUES ('Número de Orientación Vocacional','Estudiante');
+INSERT INTO tipo_documento (nombre, alcance) VALUES ('DPI','General');
+INSERT INTO tipo_documento (nombre, alcance) VALUES ('Registro Personal','Empleado');
