@@ -59,7 +59,7 @@ INSERT INTO tipo_persona (nombre, activo) VALUES ('Personal Administrativo',true
 
 
 
-INSERT INTO programasalud.persona (primer_nombre, primer_apellido, fecha_nacimiento, sexo, email)
+INSERT INTO programasalud.persona (nombre, apellido, fecha_nacimiento, sexo, email)
 VALUES
 ('Administrador','Administrador',str_to_date('01/08/2018','%d/%m/%Y'),'A','saludfiusac@gmail.com');
 
@@ -75,8 +75,7 @@ INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8704,TRUE);
 
 
 /*-----------------------------------------*/
-
 INSERT INTO tipo_documento (nombre, alcance) VALUES ('Registro Académico','Estudiante');
 INSERT INTO tipo_documento (nombre, alcance) VALUES ('Número de Orientación Vocacional','Estudiante');
-INSERT INTO tipo_documento (nombre, alcance) VALUES ('DPI','General');
+INSERT INTO tipo_documento (nombre, alcance) VALUES ('CUI','General');
 INSERT INTO tipo_documento (nombre, alcance) VALUES ('Registro Personal','Empleado');

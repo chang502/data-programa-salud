@@ -512,22 +512,107 @@ ALTER TABLE programasalud.asignacion_deportes
 
 
 
-DROP TABLE IF EXISTS programasalud.identificacion_persona;
 
-CREATE TABLE programasalud.identificacion_persona
+/*------------------------------------------------------
+--------------------------------------------------------
+--------------------------------------------------------
+--------------------------------------------------------
+--------------------------------------------------------
+--------------------------------------------------------
+ */
+
+
+
+
+
+ALTER TABLE programasalud.usuario
+    DROP foreign key FK_persona_usuario;
+
+
+ALTER TABLE programasalud.disciplina
+    DROP foreign key FK_disciplina_persona;
+
+
+ALTER TABLE programasalud.asignacion_deportes
+    DROP foreign key FK_estudiante_deportes_persona;
+
+
+
+
+
+DROP TABLE IF EXISTS programasalud.persona;
+
+CREATE TABLE programasalud.persona
 (
-    id_identificacion_persona       INT AUTO_INCREMENT NOT NULL,
-    id_persona                      INT NOT NULL,
-    id_tipo_documento               INT NOT NULL,
-    numero_documento                BIGINT,
-    activo                          BOOLEAN NOT NULL DEFAULT TRUE,
-    PRIMARY KEY(id_identificacion_persona)
+    id_persona        INT AUTO_INCREMENT NOT NULL,
+    nombre            VARCHAR(500) NOT NULL,
+    apellido          VARCHAR(500) NOT NULL,
+    fecha_nacimiento  DATE NOT NULL,
+    sexo              CHAR(1) NOT NULL,
+    email             VARCHAR(50) NULL,
+    telefono          VARCHAR(8) NULL,
+    cui               DECIMAL(13,0) NULL,
+    nov               DECIMAL(10,0) NULL,
+    regpersonal       DECIMAL(9,0) NULL,
+    carnet            DECIMAL(9,0) NULL,
+    created           TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated           TIMESTAMP NOT NULL DEFAULT NOW(),
+    source            VARCHAR(120) NOT NULL DEFAULT 'CREATED',
+    activo            BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_persona)
 );
 
-ALTER TABLE programasalud.identificacion_persona
-    ADD CONSTRAINT FK_identificacion_persona_persona FOREIGN KEY(id_persona)
+
+
+
+
+DELETE FROM usuario;
+
+ALTER TABLE programasalud.usuario
+    ADD CONSTRAINT FK_persona_usuario FOREIGN KEY(id_persona)
         REFERENCES programasalud.persona (id_persona);
 
-ALTER TABLE programasalud.identificacion_persona
-    ADD CONSTRAINT FK_identificacion_persona_tipo_documento FOREIGN KEY(id_tipo_documento)
-        REFERENCES programasalud.tipo_documento (id_tipo_documento);
+DELETE FROM disciplina;
+
+ALTER TABLE programasalud.disciplina
+    ADD CONSTRAINT FK_disciplina_persona FOREIGN KEY(id_persona)
+        REFERENCES programasalud.persona (id_persona) ON DELETE CASCADE;
+
+
+DELETE FROM asignacion_deportes;
+
+ALTER TABLE programasalud.asignacion_deportes
+    ADD CONSTRAINT FK_estudiante_deportes_persona FOREIGN KEY(id_persona)
+        REFERENCES programasalud.persona (id_persona);
+
+
+
+
+
+
+
+
+
+
+DROP TABLE IF EXISTS programasalud.seleccion_persona;
+
+CREATE TABLE programasalud.seleccion_persona
+(
+    id_seleccion_persona        INT AUTO_INCREMENT NOT NULL,
+    id_seleccion                INT NOT NULL,
+    id_persona                  INT NOT NULL,
+    fecha_inicio                DATE NOT NULL,
+    fecha_fin                   DATE NULL,
+    activo                      BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_seleccion_persona)
+);
+
+
+ALTER TABLE programasalud.seleccion_persona
+    ADD CONSTRAINT FK_seleccion_persona_seleccion FOREIGN KEY(id_seleccion)
+        REFERENCES programasalud.seleccion (id_seleccion);
+
+
+ALTER TABLE programasalud.seleccion_persona
+    ADD CONSTRAINT FK_seleccion_persona_persona FOREIGN KEY(id_persona)
+        REFERENCES programasalud.persona (id_persona);
