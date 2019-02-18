@@ -594,25 +594,144 @@ ALTER TABLE programasalud.asignacion_deportes
 
 
 
-DROP TABLE IF EXISTS programasalud.seleccion_persona;
+DROP TABLE IF EXISTS programasalud.capacitacion;
 
-CREATE TABLE programasalud.seleccion_persona
+CREATE TABLE programasalud.capacitacion
 (
-    id_seleccion_persona        INT AUTO_INCREMENT NOT NULL,
-    id_seleccion                INT NOT NULL,
-    id_persona                  INT NOT NULL,
+    id_capacitacion             INT AUTO_INCREMENT NOT NULL,
+    nombre                      VARCHAR(250) NOT NULL,
+    descripcion                 VARCHAR(600) NOT NULL,
+    tipo_capacitacion           VARCHAR(50) NOT NULL,
+    estado                      VARCHAR(100) NOT NULL,
     fecha_inicio                DATE NOT NULL,
     fecha_fin                   DATE NULL,
     activo                      BOOLEAN NOT NULL DEFAULT TRUE,
-    PRIMARY KEY(id_seleccion_persona)
+    PRIMARY KEY(id_capacitacion)
 );
 
 
-ALTER TABLE programasalud.seleccion_persona
-    ADD CONSTRAINT FK_seleccion_persona_seleccion FOREIGN KEY(id_seleccion)
-        REFERENCES programasalud.seleccion (id_seleccion);
 
 
-ALTER TABLE programasalud.seleccion_persona
-    ADD CONSTRAINT FK_seleccion_persona_persona FOREIGN KEY(id_persona)
+
+
+
+DROP TABLE IF EXISTS programasalud.capacitacion_persona;
+
+CREATE TABLE programasalud.capacitacion_persona
+(
+    id_capacitacion_persona     INT AUTO_INCREMENT NOT NULL,
+    id_capacitacion             INT NOT NULL,
+    id_persona                  INT NOT NULL,
+    activo                      BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_capacitacion_persona)
+);
+
+ALTER TABLE programasalud.capacitacion_persona
+    ADD CONSTRAINT FK_capacitacion_persona_persona FOREIGN KEY(id_persona)
         REFERENCES programasalud.persona (id_persona);
+
+
+ALTER TABLE programasalud.capacitacion_persona
+    ADD CONSTRAINT FK_capacitacion_persona_capacitacion FOREIGN KEY(id_capacitacion)
+        REFERENCES programasalud.capacitacion (id_capacitacion);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DROP TABLE IF EXISTS programasalud.cita;
+
+CREATE TABLE programasalud.cita
+(
+    id_cita                     INT AUTO_INCREMENT NOT NULL,
+    id_clinica                  INT NOT NULL,
+    id_persona                  INT NOT NULL,
+    id_doctor                   INT NOT NULL,
+    fecha                       DATETIME NOT NULL,
+    email                       VARCHAR(50) NOT NULL,
+    sintoma                     VARCHAR(500) NOT NULL,
+    activo                      BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_cita)
+);
+
+ALTER TABLE programasalud.cita
+    ADD CONSTRAINT FK_cita_clinica FOREIGN KEY(id_clinica)
+        REFERENCES programasalud.clinica (id_clinica);
+
+
+ALTER TABLE programasalud.cita
+    ADD CONSTRAINT FK_clinica_persona FOREIGN KEY(id_persona)
+        REFERENCES programasalud.persona (id_persona);
+
+
+ALTER TABLE programasalud.cita
+    ADD CONSTRAINT FK_clinica_doctor FOREIGN KEY(id_doctor)
+        REFERENCES programasalud.doctor (id_doctor);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

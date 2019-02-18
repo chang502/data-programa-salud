@@ -8,11 +8,10 @@ END ;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.create_user (IN p_id_usuario VARCHAR(50), IN p_clave VARCHAR(64), IN p_primer_nombre VARCHAR(50), IN p_segundo_nombre VARCHAR(50),
-                                            IN p_primer_apellido VARCHAR(50), IN p_segundo_apellido VARCHAR(50), IN p_fecha_nacimiento VARCHAR(10),
-                                            IN p_sexo VARCHAR(50), IN p_email VARCHAR(50), IN p_telefono VARCHAR(8), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+CREATE OR REPLACE PROCEDURE programasalud.create_user (IN p_id_usuario VARCHAR(50), IN p_clave VARCHAR(64), IN p_id_persona INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE v_temp INT;
+    DECLARE v_activo INT;
     DECLARE EXIT HANDLER FOR 1062
         BEGIN
             SET o_result=-1;
@@ -26,30 +25,49 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
+    SET o_result = -1;
+    SET o_mensaje = 'Ocurrió un error.';
 
     START TRANSACTION;
 
-    INSERT INTO programasalud.persona (primer_nombre,
-                                       segundo_nombre, primer_apellido, segundo_apellido,
-                                       fecha_nacimiento, sexo, email, telefono)
-    VALUES ( INITCAP(p_primer_nombre), INITCAP(p_segundo_nombre),
-             INITCAP(p_primer_apellido), INITCAP(p_segundo_apellido), str_to_date(p_fecha_nacimiento,'%d/%m/%Y'), UPPER(p_sexo), LOWER(p_email), p_telefono);
+    SELECT count(activo), coalesce(activo,-1) INTO v_temp, v_activo from programasalud.usuario where id_usuario=lower(p_id_usuario);
 
-    SET v_temp = LAST_INSERT_ID();
-    SET o_result = v_temp;
+    IF v_temp=1 THEN
+        IF v_activo=1 THEN
+            SET o_result = -1;
+            SET o_mensaje = 'El usuario ya existe';
+        ELSE
+            UPDATE programasalud.usuario u
+            SET
+                u.activo = TRUE,
+                u.clave = p_clave,
+                u.id_persona = p_id_persona,
+                u.cambiar_clave = FALSE
+            WHERE
+                u.id_usuario = LOWER(p_id_usuario);
 
+            DELETE FROM programasalud.usuario_rol WHERE id_usuario = LOWER(p_id_usuario);
 
-    INSERT INTO programasalud.usuario (id_usuario, clave, id_persona, activo, cambiar_clave)
-    VALUES (LOWER(p_id_usuario), p_clave, v_temp, True, False);
+            INSERT INTO programasalud.usuario_rol (id_usuario, id_rol, activo)
+            SELECT LOWER(p_id_usuario), id_rol, FALSE FROM programasalud.rol;
 
-    insert into programasalud.usuario_rol (id_usuario, id_rol, activo)
-    select p_id_usuario, id_rol, false from programasalud.rol;
+            SET o_result = 1;
+            SET o_mensaje = 'Registro ingresado correctamente';
+        END IF;
+    ELSE
+        INSERT INTO programasalud.usuario (id_usuario, clave, id_persona, activo, cambiar_clave)
+        VALUES (LOWER(p_id_usuario), p_clave, p_id_persona, True, False);
 
-    SET o_mensaje = 'Registro ingresado correctamente';
+        INSERT INTO programasalud.usuario_rol (id_usuario, id_rol, activo)
+        SELECT LOWER(p_id_usuario), id_rol, FALSE FROM programasalud.rol;
+
+        SET o_result = 1;
+        SET o_mensaje = 'Registro ingresado correctamente';
+    END IF;
 
     COMMIT;
 END;
@@ -58,6 +76,21 @@ END;
 
 
 
+CREATE OR REPLACE PROCEDURE programasalud.get_users()
+BEGIN
+    SELECT
+        u.id_usuario, p.id_persona,
+        p.nombre, p.apellido,
+        CONCAT(p.nombre,' ',p.apellido) nombre_completo,
+        p.email, p.sexo, if(p.sexo='M','Masculino',if(p.sexo='F','Femenino','')) nombre_sexo,
+        DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento,
+        COALESCE(p.telefono,'') telefono, COALESCE(p.email,'') email,
+           if(u.activo,'Activo','Inactivo') activo
+    FROM usuario u
+             JOIN persona p ON u.id_persona=p.id_persona
+    WHERE u.activo
+        and u.id_usuario!='ps_admin';
+END;
 
 
 
@@ -65,12 +98,19 @@ END;
 
 CREATE OR REPLACE PROCEDURE programasalud.get_user(IN p_id_usuario VARCHAR(50))
 BEGIN
-    SELECT u.id_usuario, p.primer_nombre, p.segundo_nombre,
-           p.primer_apellido, p.segundo_apellido,
-           DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, LOWER(p.sexo) sexo, p.email, p.telefono
-    FROM usuario u join persona p on u.id_persona=p.id_persona
+    SELECT
+        u.id_usuario, p.id_persona,
+        p.nombre, p.apellido,
+        CONCAT(p.nombre,' ',p.apellido) nombre_completo,
+        p.email, p.sexo, if(p.sexo='M','Masculino',if(p.sexo='F','Femenino','')) nombre_sexo,
+        DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento,
+        COALESCE(p.telefono,'') telefono, COALESCE(p.email,'') email,
+           if(u.activo,'Activo','Inactivo') activo
+    FROM usuario u
+             JOIN persona p ON u.id_persona=p.id_persona
     WHERE u.activo
-      AND u.id_usuario=p_id_usuario;
+        and u.id_usuario!='ps_admin'
+        AND u.id_usuario=p_id_usuario;
 END;
 
 
@@ -84,9 +124,7 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.update_user(IN p_id_usuario VARCHAR(50), IN p_clave VARCHAR(64), IN p_primer_nombre VARCHAR(50), IN p_segundo_nombre VARCHAR(50),
-                                           IN p_primer_apellido VARCHAR(50), IN p_segundo_apellido VARCHAR(50), IN p_fecha_nacimiento VARCHAR(10),
-                                           IN p_sexo VARCHAR(50), IN p_email VARCHAR(50), IN p_telefono VARCHAR(98), IN p_cambiar_clave VARCHAR(1), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+CREATE OR REPLACE PROCEDURE programasalud.update_user(IN p_id_usuario VARCHAR(50), IN p_clave VARCHAR(64), IN p_id_persona INT, IN p_cambiar_clave VARCHAR(1), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE persona_id INT;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -94,7 +132,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
 
@@ -111,36 +149,21 @@ BEGIN
 
     if o_result>0 THEN
 
-        select u.id_persona into persona_id from usuario u
-        where u.id_usuario=p_id_usuario;
-
-        UPDATE
-            persona p
-        SET
-            p.primer_nombre = INITCAP(p_primer_nombre),
-            p.segundo_nombre = INITCAP(p_segundo_nombre),
-            p.primer_apellido = INITCAP(p_primer_apellido),
-            p.segundo_apellido = INITCAP(p_segundo_apellido),
-            p.sexo = UPPER(p_sexo),
-            p.fecha_nacimiento=str_to_date(p_fecha_nacimiento,'%d/%m/%Y'),
-            p.email=LOWER(p_email),
-            p.telefono=p_telefono
-        WHERE
-                p.id_persona = persona_id;
 
 
-        IF p_clave = "" THEN
+
+        IF p_clave = '' THEN
             UPDATE
                 usuario u
             SET
-                u.cambiar_clave = (p_cambiar_clave = "1")
+                u.cambiar_clave = (p_cambiar_clave = '1')
             WHERE
                     u.id_usuario=p_id_usuario;
         ELSE
             UPDATE
                 usuario u
             SET
-                u.cambiar_clave = (p_cambiar_clave = "1"),
+                u.cambiar_clave = (p_cambiar_clave = '1'),
                 u.clave = p_clave
             WHERE
                     u.id_usuario=p_id_usuario;
@@ -197,7 +220,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -244,7 +267,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -284,6 +307,7 @@ CREATE OR REPLACE PROCEDURE programasalud.create_doctor (IN p_id_usuario VARCHAR
 BEGIN
 
     DECLARE v_temp INT;
+    DECLARE v_activo INT;
     DECLARE EXIT HANDLER FOR 1062
         BEGIN
             SET o_result=-1;
@@ -297,56 +321,57 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
+    SET v_activo = -1;
 
     START TRANSACTION;
 
+    SELECT count(1), coalesce(d.activo,-1) INTO v_temp, v_activo
+    FROM doctor d
+    JOIN usuario u on d.id_usuario = u.id_usuario
+    WHERE u.id_usuario=p_id_usuario;
 
-    SELECT COUNT(1) INTO o_result
-    FROM usuario u
-    WHERE u.id_usuario= p_id_usuario
-      AND u.activo=TRUE;
 
-    SELECT count(*) INTO v_temp FROM doctor d  WHERE d.id_usuario=p_id_usuario AND d.activo=FALSE;
+    IF v_temp = 0 THEN
+        INSERT INTO programasalud.doctor (id_usuario, activo)
+        VALUES ( p_id_usuario, TRUE);
 
-    IF o_result > 0 THEN
+        SET o_result = LAST_INSERT_ID();
 
-        IF v_temp > 0 THEN # ---- valor ya existe pero está inactivo
+        INSERT INTO programasalud.doctor_especialidad (id_doctor, id_especialidad, activo)
+        SELECT o_result, id_especialidad, FALSE FROM programasalud.especialidad;
 
+
+        INSERT INTO programasalud.clinica_doctor (id_clinica, id_doctor, activo)
+        SELECT id_clinica, o_result, FALSE
+        FROM clinica;
+
+        SET o_mensaje = 'Registro ingresado correctamente';
+    ELSE
+        IF v_activo = 1 THEN
+            SET o_result = -1;
+            SET o_mensaje = 'Ya existe el registro';
+        ELSE
             UPDATE doctor d
             SET d.activo = TRUE
-            WHERE
-                    d.id_usuario=p_id_usuario;
+            WHERE d.id_usuario=p_id_usuario;
 
-        ELSE
+            SELECT id_doctor INTO o_result
+            FROM doctor d WHERE
+            d.id_usuario=p_id_usuario;
 
-            INSERT INTO programasalud.doctor (id_usuario, activo)
-            VALUES ( p_id_usuario, TRUE);
-
-            SET o_result = LAST_INSERT_ID();
-
-            INSERT INTO programasalud.doctor_especialidad (id_doctor, id_especialidad, activo)
-            SELECT o_result, id_especialidad, FALSE FROM programasalud.especialidad;
-
+            DELETE FROM doctor_especialidad WHERE id_doctor =o_result;
 
             INSERT INTO programasalud.clinica_doctor (id_clinica, id_doctor, activo)
             SELECT id_clinica, o_result, FALSE
             FROM clinica;
 
-
-
+            SET o_result = 1;
+            SET o_mensaje = 'Registro ingresado correctamente';
         END IF;
-
-
-
-
-
-        SET o_mensaje = 'Registro ingresado correctamente';
-    ELSE
-        SET o_mensaje = 'Registro no existe';
     END IF;
 
     COMMIT;
@@ -364,7 +389,7 @@ BEGIN
 
     SELECT
         d.id_doctor, u.id_usuario,
-        CONCAT(TRIM(CONCAT(p.primer_nombre,' ',p.segundo_nombre)),' ',TRIM(CONCAT(p.primer_apellido,' ', p.segundo_apellido))) nombre,
+        CONCAT(p.nombre,' ',p.apellido) nombre_completo,
         DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, UPPER(p.sexo) sexo,
         p.telefono, p.email
     FROM doctor d
@@ -414,7 +439,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -467,7 +492,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -524,7 +549,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -600,7 +625,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -701,7 +726,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -754,7 +779,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -824,7 +849,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -919,7 +944,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -970,7 +995,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -1007,7 +1032,7 @@ END;
 CREATE OR REPLACE PROCEDURE programasalud.get_clinica_doctores(IN p_id_clinica VARCHAR(50))
 BEGIN
 
-    SELECT dc.id_clinica_doctor, CONCAT(TRIM(CONCAT(p.primer_nombre,' ',p.segundo_nombre)),' ',TRIM(CONCAT(p.primer_apellido,' ', p.segundo_apellido))) nombre,
+    SELECT dc.id_clinica_doctor, CONCAT(p.nombre,' ',p.apellido) nombre_completo,
            dc.activo
     FROM clinica_doctor dc
              JOIN doctor d ON dc.id_doctor=d.id_doctor
@@ -1030,7 +1055,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -1095,7 +1120,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -1139,7 +1164,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -1195,7 +1220,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -1309,7 +1334,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -1372,7 +1397,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -1431,7 +1456,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET o_result = -1;
@@ -1527,7 +1552,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -1579,7 +1604,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -1667,7 +1692,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET o_result = -1;
@@ -1773,7 +1798,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -1828,7 +1853,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -1921,7 +1946,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET o_result = -1;
@@ -2040,7 +2065,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -2094,7 +2119,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -2167,7 +2192,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET o_result = -1;
@@ -2260,7 +2285,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -2311,7 +2336,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -2391,7 +2416,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET o_result = -1;
@@ -2492,7 +2517,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -2545,7 +2570,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -2650,7 +2675,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET o_result = -1;
@@ -2689,16 +2714,7 @@ END;
 /*-------------------------------*/
 
 
-CREATE OR REPLACE PROCEDURE programasalud.get_users()
-BEGIN
-    SELECT
-        u.id_usuario,
-        CONCAT(TRIM(CONCAT(p.primer_nombre,' ',COALESCE(p.segundo_nombre,''))),' ',TRIM(CONCAT(p.primer_apellido,' ', COALESCE(p.segundo_apellido,'')))) nombre,
-        p.email, if(u.activo,'Activo','Inactivo') activo
-    FROM usuario u
-             JOIN persona p ON u.id_persona=p.id_persona
-    WHERE u.activo;
-END;
+
 
 
 
@@ -2874,7 +2890,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -2976,7 +2992,9 @@ BEGIN
                                            cui, nov, carnet, source)
         VALUES ( UPPER(TRIM(p_nombre)), UPPER(TRIM(p_apellido)),
                  str_to_date(TRIM(p_fecha_nacimiento),'%Y-%m-%d'), UPPER(TRIM(p_sexo)), LOWER(TRIM(p_email)),
-                p_cui, p_nov, p_carnet, 'CC');
+                if(p_cui is null or p_cui='',null,p_cui),
+                if(p_nov is null or p_nov='',null,p_nov),
+                if(p_carnet is null or p_carnet='',null,p_carnet), 'CC');
 
         SET v_temp = LAST_INSERT_ID();
         RETURN v_temp;
@@ -2988,9 +3006,9 @@ BEGIN
             fecha_nacimiento = str_to_date(TRIM(p_fecha_nacimiento),'%Y-%m-%d'),
             sexo = UPPER(TRIM(p_sexo)),
             email = LOWER(TRIM(p_email)),
-            cui = p_cui,
-            nov = p_nov,
-            carnet = p_carnet,
+            cui = if(p_cui is null or p_cui='',null,p_cui),
+            nov = if(p_nov is null or p_nov='',null,p_nov),
+            carnet = if(p_carnet is null or p_carnet='',null,p_carnet),
             updated = now()
         WHERE id_persona = v_temp;
         RETURN v_temp;
@@ -3019,7 +3037,7 @@ BEGIN
 END;
 
 
-CREATE OR REPLACE PROCEDURE programasalud.search_person_by_carnet (IN p_carnet VARCHAR(9))
+CREATE OR REPLACE PROCEDURE programasalud.search_person_by_carnet (IN p_carnet VARCHAR(13))
 BEGIN
 
     SELECT p.id_persona, p.nombre, p.telefono, p.apellido, CONCAT(nombre,' ',apellido) nombre_completo,
@@ -3032,18 +3050,37 @@ BEGIN
 END;
 
 
-CREATE OR REPLACE PROCEDURE programasalud.search_person_by_cui (IN p_cui VARCHAR(9))
+CREATE OR REPLACE PROCEDURE programasalud.search_person_by_cui (IN p_cui VARCHAR(13))
 BEGIN
 
     SELECT p.id_persona, p.nombre, p.telefono, p.apellido, CONCAT(nombre,' ',apellido) nombre_completo,
            DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, p.sexo, p.email,
            p.cui, p.nov, p.carnet
     FROM programasalud.persona p
-    where p.cui = p_carnet AND p.cui is not null;
+    where p.cui = p_cui AND p.cui is not null;
 
 
 END;
 
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.search_person_by_any_id (IN p_id VARCHAR(13))
+BEGIN
+
+    SELECT p.id_persona, p.nombre, p.telefono, p.apellido, CONCAT(nombre,' ',apellido) nombre_completo,
+           DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, p.sexo, p.email,
+           p.cui, p.nov, p.carnet, p.regpersonal
+    FROM programasalud.persona p
+    where (p.cui like concat('%',p_id,'%') AND p.cui is not null AND p_id!='')
+    OR (p.carnet like concat('%',p_id,'%') AND p.carnet is not null AND p_id!='')
+    OR (p.nov like concat('%',p_id,'%') AND p.nov is not null AND p_id!='')
+    OR (p.regpersonal like concat('%',p_id,'%') AND p.regpersonal is not null AND p_id!='')
+        limit 50;
+
+
+END;
 
 
 
@@ -3076,7 +3113,10 @@ BEGIN
                                            cui, nov, regpersonal, carnet, source)
         VALUES ( UPPER(TRIM(p_nombre)), UPPER(TRIM(p_apellido)),
                  str_to_date(TRIM(p_fecha_nacimiento),'%Y-%m-%d'), UPPER(TRIM(p_sexo)), LOWER(TRIM(p_email)),
-                p_cui, p_nov, p_regpersonal, p_carnet, 'CREAR_PERSONA');
+                if(p_cui is null or p_cui='',null,p_cui),
+                if(p_nov is null or p_nov='',null,p_nov),
+                if(p_regpersonal is null or p_regpersonal='',null,p_regpersonal),
+                if(p_carnet is null or p_carnet='',null,p_carnet), 'CREAR_PERSONA');
 
         SET v_temp = LAST_INSERT_ID();
         RETURN v_temp;
@@ -3102,17 +3142,15 @@ BEGIN
 
     /*SET v_temp = fn_create_person(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo, p_email, p_telefono, p_cui, p_nov, p_regpersonal, p_carnet);*/
 
-        SET SESSION sql_mode = '';
-
     START TRANSACTION;
 
     /* check for already created persons, search by id */
         select count(1) into v_temp
         from persona
-        where (cui=p_cui and cui is not null)
-        or (nov=p_nov and nov is not null)
-        or (regpersonal=p_regpersonal and regpersonal is not null)
-        or (carnet = p_carnet and carnet is not null);
+        where (cui=p_cui and cui is not null and p_cui!='')
+        or (nov=p_nov and nov is not null and p_nov!='')
+        or (regpersonal=p_regpersonal and regpersonal is not null and p_regpersonal!='')
+        or (carnet = p_carnet and carnet is not null and p_carnet!='');
 
     IF v_temp = 0 THEN
         INSERT INTO programasalud.persona (nombre, apellido,
@@ -3120,7 +3158,10 @@ BEGIN
                                            cui, nov, regpersonal, carnet)
         VALUES ( UPPER(p_nombre), UPPER(p_apellido),
                  str_to_date(p_fecha_nacimiento,'%d/%m/%Y'), UPPER(p_sexo), LOWER(p_email), p_telefono,
-                p_cui, p_nov, p_regpersonal, p_carnet);
+                if(p_cui is null or p_cui='',null,p_cui),
+                if(p_nov is null or p_nov='',null,p_nov),
+                if(p_regpersonal is null or p_regpersonal='',null,p_regpersonal),
+                if(p_carnet is null or p_carnet='',null,p_carnet));
 
         SET o_result = LAST_INSERT_ID();
         SET o_mensaje = 'Registro ingresado correctamente';
@@ -3216,7 +3257,9 @@ BEGIN
                                            cui, regpersonal, source)
         VALUES ( UPPER(TRIM(p_nombre)), UPPER(TRIM(p_apellido)),
                  str_to_date(TRIM(p_fecha_nacimiento),'%Y-%m-%d'), UPPER(TRIM(p_sexo)), LOWER(TRIM(p_email)),
-                p_cui, p_regpersonal, 'CC');
+                if(p_cui is null or p_cui='',null,p_cui),
+                if(p_regpersonal is null or p_regpersonal='',null,p_regpersonal),
+                'CC');
 
         SET v_temp = LAST_INSERT_ID();
         RETURN v_temp;
@@ -3228,8 +3271,8 @@ BEGIN
             fecha_nacimiento = str_to_date(TRIM(p_fecha_nacimiento),'%Y-%m-%d'),
             sexo = UPPER(TRIM(p_sexo)),
             email = LOWER(TRIM(p_email)),
-            cui = p_cui,
-            regpersonal = p_regpersonal,
+            cui = if(p_cui is null or p_cui='',null,p_cui),
+            regpersonal = if(p_regpersonal is null or p_regpersonal='',null,p_regpersonal),
             updated = now()
         WHERE id_persona = v_temp;
         RETURN v_temp;
@@ -3301,7 +3344,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -3334,7 +3377,7 @@ BEGIN
         s.id_seleccion_persona, s.id_seleccion, s2.nombre nombre_seleccion, s.id_persona,
         concat(p.nombre,' ',p.apellido) nombre_persona,
         DATE_FORMAT(s.fecha_inicio, '%d/%m/%Y') fecha_inicio,
-        DATE_FORMAT(s.fecha_fin, '%d/%m/%Y') fecha_fin
+        if((s.fecha_fin is null)=0,'',DATE_FORMAT(s.fecha_fin, '%d/%m/%Y'))  fecha_fin
     FROM
         seleccion_persona s
     JOIN persona p on s.id_persona = p.id_persona
@@ -3356,7 +3399,7 @@ BEGIN
         s.id_seleccion_persona, s.id_seleccion, s2.nombre nombre_seleccion, s.id_persona,
         concat(p.nombre,' ',p.apellido) nombre_persona,
         DATE_FORMAT(s.fecha_inicio, '%d/%m/%Y') fecha_inicio,
-        DATE_FORMAT(s.fecha_fin, '%d/%m/%Y') fecha_fin
+        if(c.fecha_fin is null,'',DATE_FORMAT(c.fecha_fin, '%d/%m/%Y'))  fecha_fin
     FROM
         seleccion_persona s
     JOIN persona p on s.id_persona = p.id_persona
@@ -3394,7 +3437,7 @@ BEGIN
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
             SET o_result=-1;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     SET v_temp = -1;
@@ -3415,7 +3458,7 @@ BEGIN
             s.id_seleccion = p_id_seleccion,
             s.id_persona = p_id_persona,
             s.fecha_inicio = str_to_date(TRIM(p_fecha_inicio),'%d/%m/%Y'),
-            s.fecha_fin = str_to_date(TRIM(p_fecha_fin),'%d/%m/%Y'),
+            s.fecha_fin = if(p_fecha_fin='',null,str_to_date(TRIM(p_fecha_fin),'%d/%m/%Y')),
             s.activo=TRUE
         WHERE
             s.id_seleccion_persona = p_id_seleccion_persona;
@@ -3446,7 +3489,7 @@ BEGIN
             GET DIAGNOSTICS CONDITION 1
                 @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
             ROLLBACK;
-            SET o_mensaje=CONCAT("Ocurrió un error: ",@p2);
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
         END;
 
     START TRANSACTION;
@@ -3500,10 +3543,798 @@ END;
 
 
 
+CREATE OR REPLACE PROCEDURE programasalud.create_training (IN p_nombre VARCHAR(250), IN p_descripcion VARCHAR(600), IN p_tipo_capacitacion VARCHAR(50),
+                                            IN p_estado VARCHAR(100), IN p_fecha_inicio VARCHAR(10), IN p_fecha_fin VARCHAR(10), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    SET v_temp = -1;
+
+    START TRANSACTION;
+
+    INSERT INTO programasalud.capacitacion
+        (nombre, descripcion, tipo_capacitacion, estado, fecha_inicio, fecha_fin)
+    VALUES
+           (UPPER(p_nombre), UPPER(p_descripcion), UPPER(p_tipo_capacitacion), UPPER(p_estado),
+            str_to_date(TRIM(p_fecha_inicio),'%d/%m/%Y'),if(p_fecha_fin='',null,str_to_date(TRIM(p_fecha_fin),'%d/%m/%Y')));
+
+    SET o_result = LAST_INSERT_ID();
+
+    SET o_mensaje = 'Registro ingresado correctamente';
+
+    COMMIT;
+
+END;
 
 
 
 
 
 
+
+CREATE OR REPLACE PROCEDURE programasalud.get_trainings()
+BEGIN
+
+    SELECT
+        c.id_capacitacion, nombre, descripcion, tipo_capacitacion,
+        if(tipo_capacitacion='CURSOLIBRE','Curso Libre',if(tipo_capacitacion='CAPACITACION','Capacitación','')) nombre_tipo_capacitacion, estado,
+        DATE_FORMAT(c.fecha_inicio, '%d/%m/%Y') fecha_inicio,
+        if(c.fecha_fin is null,'',DATE_FORMAT(c.fecha_fin, '%d/%m/%Y')) fecha_fin
+    FROM
+         capacitacion c
+    WHERE
+        c.activo;
+
+
+
+END;
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_training(IN p_id_capacitacion INT)
+BEGIN
+
+    SELECT
+        c.id_capacitacion, nombre, descripcion, tipo_capacitacion,
+        if(tipo_capacitacion='CURSOLIBRE','Curso Libre',if(tipo_capacitacion='CAPACITACION','Capacitación','')) nombre_tipo_capacitacion, estado,
+        DATE_FORMAT(c.fecha_inicio, '%d/%m/%Y') fecha_inicio,
+        if(c.fecha_fin is null,'',DATE_FORMAT(c.fecha_fin, '%d/%m/%Y')) fecha_fin
+    FROM
+         capacitacion c
+    WHERE
+        c.activo
+        AND c.id_capacitacion = p_id_capacitacion;
+
+END;
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.update_training (IN p_id_capacitacion INT, IN p_nombre VARCHAR(250), IN p_descripcion VARCHAR(600), IN p_tipo_capacitacion VARCHAR(50),
+                                            IN p_estado VARCHAR(100), IN p_fecha_inicio VARCHAR(10), IN p_fecha_fin VARCHAR(10),
+                                OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    SET v_temp = -1;
+
+    START TRANSACTION;
+
+
+    SELECT COUNT(1) INTO o_result
+    FROM capacitacion c
+    WHERE c.id_capacitacion=p_id_capacitacion
+      AND c.activo;
+
+
+    IF o_result > 0 THEN
+
+        UPDATE capacitacion c
+        SET
+            c.nombre = UPPER(p_nombre),
+            c.descripcion = UPPER(p_descripcion),
+            c.tipo_capacitacion = UPPER(TRIM(p_tipo_capacitacion)),
+            c.estado = UPPER(p_estado),
+            c.fecha_inicio = str_to_date(TRIM(p_fecha_inicio),'%d/%m/%Y'),
+            c.fecha_fin = if(p_fecha_fin='',null,str_to_date(TRIM(p_fecha_fin),'%d/%m/%Y')),
+            c.activo=TRUE
+        WHERE
+            c.id_capacitacion = p_id_capacitacion;
+
+
+
+        SET o_mensaje = 'Registro actualizado correctamente';
+    ELSE
+        SET o_mensaje = 'Registro no existe';
+    END IF;
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_training(IN p_id_capacitacion INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    START TRANSACTION;
+
+    SELECT COUNT(1) INTO o_result
+    FROM capacitacion c
+    WHERE c.id_capacitacion=p_id_capacitacion
+    AND c.activo;
+
+
+    if o_result>0 THEN
+        UPDATE
+            capacitacion c
+        SET
+            c.activo=false
+        WHERE
+            c.id_capacitacion = p_id_capacitacion;
+        SET o_mensaje = 'Registro actualizado correctamente';
+    ELSE
+        SET o_mensaje = 'Registro no existe';
+    END IF;
+
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.create_training_attendee (IN p_id_capacitacion INT, IN p_id_persona INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE v_activo INT;
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    SET v_temp = -1;
+    SET v_activo = -1;
+
+    START TRANSACTION;
+
+    SELECT count(1), cp.activo INTO v_temp, v_activo
+    FROM capacitacion_persona cp
+    WHERE cp.id_capacitacion=p_id_capacitacion
+    AND cp.id_persona = p_id_persona;
+
+    IF v_temp>0 THEN
+        IF v_activo THEN
+            SET o_result=-1;
+            SET o_mensaje = 'Ya existe un asistente a esta capacitación';
+        ELSE
+            UPDATE
+                capacitacion_persona
+            SET
+                activo=TRUE
+            WHERE
+                cp.id_capacitacion = p_id_capacitacion
+                AND cp.id_persona = p_id_persona;
+
+            SET o_result = 1;
+            SET o_mensaje = 'Registro ingresado correctamente';
+        END IF;
+
+    ELSEIF v_temp=0 THEN
+        INSERT INTO programasalud.capacitacion_persona
+            (id_capacitacion, id_persona)
+        VALUES
+           (p_id_capacitacion, p_id_persona);
+
+        SET o_result = LAST_INSERT_ID();
+
+        SET o_mensaje = 'Registro ingresado correctamente';
+    END IF;
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_training_attendees()
+BEGIN
+
+    SELECT
+        cp.id_capacitacion_persona, cp.id_capacitacion, c.nombre nombre_capacitacion,
+           cp.id_persona, concat(p.nombre,' ',p.apellido) nombre_persona
+    FROM programasalud.capacitacion_persona cp
+    JOIN programasalud.capacitacion c ON cp.id_capacitacion = c.id_capacitacion
+    JOIN programasalud.persona p ON cp.id_persona = p.id_persona
+    WHERE cp.activo;
+
+END;
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_training_attendee(IN p_id_capacitacion_persona INT)
+BEGIN
+
+    SELECT
+        cp.id_capacitacion_persona, cp.id_capacitacion, c.nombre nombre_capacitacion,
+           cp.id_persona, concat(p.nombre,' ',p.apellido) nombre_persona
+    FROM programasalud.capacitacion_persona cp
+    JOIN programasalud.capacitacion c ON cp.id_capacitacion = c.id_capacitacion
+    JOIN programasalud.persona p ON cp.id_persona = p.id_persona
+    WHERE cp.activo
+    AND cp.id_capacitacion_persona = p_id_capacitacion_persona;
+
+END;
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.update_training_attendee (IN p_id_capacitacion_persona INT,
+                                IN p_id_capacitacion INT, IN p_id_persona INT,
+                                OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    SET v_temp = -1;
+
+    START TRANSACTION;
+
+
+    SELECT COUNT(1) INTO o_result
+    FROM capacitacion_persona c
+    WHERE c.id_capacitacion_persona=p_id_capacitacion_persona
+      AND c.activo;
+
+
+    IF o_result > 0 THEN
+
+        UPDATE capacitacion_persona c
+        SET
+            c.id_capacitacion = p_id_capacitacion,
+            c.id_persona = p_id_persona,
+            c.activo=TRUE
+        WHERE
+            c.id_capacitacion = p_id_capacitacion;
+
+
+
+        SET o_mensaje = 'Registro actualizado correctamente';
+    ELSE
+        SET o_mensaje = 'Registro no existe';
+    END IF;
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_training_attendee(IN p_id_capacitacion_persona INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    START TRANSACTION;
+
+    SELECT COUNT(1) INTO o_result
+    FROM capacitacion_persona c
+    WHERE c.id_capacitacion_persona=p_id_capacitacion_persona
+    AND c.activo;
+
+
+    if o_result>0 THEN
+        UPDATE
+            capacitacion_persona c
+        SET
+            c.activo=false
+        WHERE
+            c.id_capacitacion_persona = p_id_capacitacion_persona;
+        SET o_mensaje = 'Registro actualizado correctamente';
+    ELSE
+        SET o_mensaje = 'Registro no existe';
+    END IF;
+
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_user_clinics(IN p_id_usuario VARCHAR(50))
+BEGIN
+    SELECT c.id_clinica, c.nombre FROM clinica c
+    JOIN clinica_doctor cd on c.id_clinica = cd.id_clinica AND cd.activo
+    JOIN doctor d on cd.id_doctor = d.id_doctor AND d.activo
+    JOIN usuario u on d.id_usuario = u.id_usuario AND u.activo
+    JOIN usuario_rol ur on u.id_usuario = ur.id_usuario AND ur.activo AND ur.id_rol = 8701
+    WHERE c.activo
+    AND u.id_usuario = LOWER(p_id_usuario);
+END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_user_doctors(IN p_id_usuario VARCHAR(50))
+BEGIN
+    SELECT  d.id_doctor,
+        CONCAT(p.nombre,' ',p.apellido) nombre_completo
+    FROM doctor d
+    JOIN usuario u on d.id_usuario = u.id_usuario AND u.activo
+    JOIN usuario_rol ur on u.id_usuario = ur.id_usuario AND ur.activo AND ur.id_rol = 8701
+    JOIN persona p on u.id_persona = p.id_persona
+    WHERE d.activo
+    AND u.id_usuario = LOWER(p_id_usuario);
+END;
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_person_email(IN p_id_persona INT)
+BEGIN
+    /*SELECT id_persona, email FROM persona WHERE id_persona = p_id_persona;*/
+    SELECT id_persona, 'andres.chang.h@gmail.com' email FROM persona WHERE id_persona = p_id_persona;
+END;
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.schedule_appointment (IN p_id_clinica INT, IN p_id_persona INT, IN p_id_doctor INT,
+                                                                IN p_fecha VARCHAR(10), IN p_hora VARCHAR(5), IN p_sintoma VARCHAR(500), IN p_email VARCHAR(50),
+                                                                OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE v_fecha DATETIME;
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    SET v_temp = -1;
+
+    START TRANSACTION;
+
+    SET v_fecha = str_to_date(concat(p_fecha,' ',p_hora),'%d/%m/%Y %H:%i');
+
+    /* Valida disponibilidad de la clínica */
+    SELECT count(1) INTO v_temp
+    FROM cita c
+    JOIN clinica c2 on c.id_clinica = c2.id_clinica AND c2.activo
+    WHERE c.activo AND c.id_clinica = p_id_clinica AND c.fecha = v_fecha;
+
+    IF v_temp>0 THEN
+
+        SET o_result=-1;
+        SET o_mensaje = 'Ya existe una cita a esa fecha y hora en la clínica';
+
+    ELSE
+
+        /* Valida disponibilidad del doctor */
+        SELECT count(1) INTO v_temp
+        FROM cita c
+        JOIN doctor d on c.id_doctor = d.id_doctor AND d.activo
+        WHERE c.activo AND c.id_doctor = p_id_doctor AND c.fecha = v_fecha;
+
+        IF v_temp>0 THEN
+            SET o_result=-1;
+            SET o_mensaje = 'La persona (doctor) que atenderá la cita ya tiene una programada para la misma fecha y hora';
+        ELSE
+
+            /* Valida disponibilidad de la persona */
+            SELECT count(1) INTO v_temp FROM cita c
+            WHERE c.activo AND c.id_persona = p_id_persona AND c.fecha = v_fecha;
+
+            IF v_temp>0 THEN
+                SET o_result=-1;
+                SET o_mensaje = 'La persona que asistirá a la cita ya tiene una programada para la misma fecha y hora';
+            ELSE
+
+                INSERT INTO programasalud.cita
+                    (id_clinica, id_persona, id_doctor, fecha, email, sintoma)
+                VALUES
+                   (p_id_clinica, p_id_persona, p_id_doctor, v_fecha, LOWER(p_email), UPPER(p_sintoma));
+
+                SET o_result = LAST_INSERT_ID();
+                SET o_mensaje = 'Registro ingresado correctamente';
+            END IF;
+        END IF;
+    END IF;
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_todays_appointments(IN p_id_usuario VARCHAR(50))
+BEGIN
+    SELECT c.id_cita, DATE_FORMAT(c.fecha,'%d/%m/%Y') fecha, DATE_FORMAT(c.fecha,'%H:%i') hora, p.id_persona id_paciente, concat(p.nombre,' ',p.apellido) paciente,
+           p2.id_persona id_atiende, concat(p2.nombre,' ',p2.apellido) atiende, c2.id_clinica, c2.nombre clinica, c.sintoma
+    FROM cita c
+    JOIN persona p on c.id_persona = p.id_persona
+    JOIN doctor d on c.id_doctor = d.id_doctor
+    JOIN usuario u on d.id_usuario = u.id_usuario
+    JOIN persona p2 on u.id_persona = p2.id_persona
+    JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    WHERE c.activo
+    AND date(c.fecha) = date(now())
+    AND u.id_usuario=p_id_usuario
+    ORDER BY c.fecha;
+END;
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_future_appointments(IN p_id_usuario VARCHAR(50))
+BEGIN
+    SELECT c.id_cita, DATE_FORMAT(c.fecha,'%d/%m/%Y') fecha, DATE_FORMAT(c.fecha,'%H:%i') hora, p.id_persona id_paciente, concat(p.nombre,' ',p.apellido) paciente,
+           p2.id_persona id_atiende, concat(p2.nombre,' ',p2.apellido) atiende, c2.id_clinica, c2.nombre clinica, c.sintoma
+    FROM cita c
+    JOIN persona p on c.id_persona = p.id_persona
+    JOIN doctor d on c.id_doctor = d.id_doctor
+    JOIN usuario u on d.id_usuario = u.id_usuario
+    JOIN persona p2 on u.id_persona = p2.id_persona
+    JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    WHERE c.activo
+    AND date(c.fecha) > date(now())
+    AND u.id_usuario=p_id_usuario
+    ORDER BY c.fecha;
+END;
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_appointment(IN p_id_cita INT, IN p_id_usuario VARCHAR(50))
+BEGIN
+    SELECT c.id_cita, DATE_FORMAT(c.fecha,'%d/%m/%Y') fecha, DATE_FORMAT(c.fecha,'%H:%i') hora, p.id_persona id_paciente, concat(p.nombre,' ',p.apellido) paciente,
+           c.id_doctor, p2.id_persona id_atiende, concat(p2.nombre,' ',p2.apellido) atiende, c2.id_clinica, c2.nombre clinica, c.email, c.sintoma
+    FROM cita c
+    JOIN persona p on c.id_persona = p.id_persona
+    JOIN doctor d on c.id_doctor = d.id_doctor
+    JOIN usuario u on d.id_usuario = u.id_usuario
+    JOIN persona p2 on u.id_persona = p2.id_persona
+    JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    WHERE c.activo
+    AND c.id_cita = p_id_cita
+    AND u.id_usuario=p_id_usuario;
+END;
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.update_appointment (IN p_id_cita INT, IN p_id_clinica INT, IN p_id_doctor INT,
+                                                IN p_fecha VARCHAR(10), IN p_hora VARCHAR(5), IN p_sintoma VARCHAR(500),
+                                                                OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE v_fecha DATETIME;
+
+    DECLARE v_id_persona INT;
+
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    SET v_temp = -1;
+    SET v_id_persona = -1;
+
+    START TRANSACTION;
+
+    SET v_fecha = str_to_date(concat(p_fecha,' ',p_hora),'%d/%m/%Y %H:%i');
+
+    SELECT count(1), c.id_persona INTO v_temp, v_id_persona
+    FROM cita c
+    WHERE c.activo
+    AND c.id_cita = p_id_cita;
+
+    /* Valida disponibilidad de la clínica */
+    SELECT count(1) INTO v_temp
+    FROM cita c
+    JOIN clinica c2 on c.id_clinica = c2.id_clinica AND c2.activo
+    WHERE c.activo AND c.id_clinica = p_id_clinica AND c.fecha = v_fecha
+        AND c.id_cita != p_id_cita;
+
+    IF v_temp>0 THEN
+
+        SET o_result=-1;
+        SET o_mensaje = 'Ya existe una cita a esa fecha y hora en la clínica';
+
+    ELSE
+
+        /* Valida disponibilidad del doctor */
+        SELECT count(1) INTO v_temp
+        FROM cita c
+        JOIN doctor d on c.id_doctor = d.id_doctor AND d.activo
+        WHERE c.activo AND c.id_doctor = p_id_doctor AND c.fecha = v_fecha
+            AND c.id_cita != p_id_cita;
+
+        IF v_temp>0 THEN
+            SET o_result=-1;
+            SET o_mensaje = 'La persona (doctor) que atenderá la cita ya tiene una programada para la misma fecha y hora';
+        ELSE
+
+            /* Valida disponibilidad de la persona */
+            SELECT count(1) INTO v_temp FROM cita c
+            WHERE c.activo AND c.id_persona = v_id_persona AND c.fecha = v_fecha
+                AND c.id_cita != p_id_cita;
+
+            IF v_temp>0 THEN
+                SET o_result=-1;
+                SET o_mensaje = 'La persona que asistirá a la cita ya tiene una programada para la misma fecha y hora';
+            ELSE
+                UPDATE cita c
+                SET
+                    id_clinica = p_id_clinica,
+                    id_doctor = p_id_doctor,
+                    fecha = v_fecha,
+                    sintoma = UPPER(p_sintoma)
+                WHERE
+                      id_cita=p_id_cita;
+
+                SET o_result = p_id_cita;
+                SET o_mensaje = 'Registro ingresado correctamente';
+            END IF;
+        END IF;
+    END IF;
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_appointment(IN p_id_cita INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    START TRANSACTION;
+
+    SELECT COUNT(1) INTO o_result
+    FROM cita c
+    WHERE c.id_cita=p_id_cita
+    AND c.activo;
+
+
+    if o_result>0 THEN
+        UPDATE
+            cita c
+        SET
+            c.activo=false
+        WHERE
+            c.id_cita = p_id_cita;
+        SET o_mensaje = 'Registro actualizado correctamente';
+    ELSE
+        SET o_mensaje = 'Registro no existe';
+    END IF;
+
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_appointment_measurements(IN p_id_cita INT, IN p_id_usuario VARCHAR(50))
+BEGIN
+
+    SELECT m.nombre fieldLabel, tdm.tipo_dato, coalesce(m.unidad_medida,'') unidad_medida,
+        m.valor_minimo, m.valor_maximo, if(m.obligatorio=1,'true','false') obligatorio from clinica_medida cm
+    JOIN clinica c on cm.id_clinica = c.id_clinica
+    JOIN medida m on cm.id_medida = m.id_medida
+    JOIN tipo_dato_medida tdm on m.id_tipo_dato = tdm.id_tipo_dato
+    JOIN cita c2 on c.id_clinica = c2.id_clinica AND c2.activo AND c2.id_cita=p_id_cita
+    JOIN doctor d on c2.id_doctor = d.id_doctor
+    JOIN usuario u on d.id_usuario = u.id_usuario AND u.id_usuario=p_id_usuario
+    WHERE cm.activo;
+
+END;
 
