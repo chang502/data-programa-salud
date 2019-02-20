@@ -545,22 +545,24 @@ DROP TABLE IF EXISTS programasalud.persona;
 CREATE TABLE programasalud.persona
 (
     id_persona        INT AUTO_INCREMENT NOT NULL,
-    nombre            VARCHAR(500) NOT NULL,
-    apellido          VARCHAR(500) NOT NULL,
+    nombre            VARCHAR(500) COLLATE utf8_unicode_ci NOT NULL,
+    apellido          VARCHAR(500) COLLATE utf8_unicode_ci NOT NULL,
     fecha_nacimiento  DATE NOT NULL,
     sexo              CHAR(1) NOT NULL,
-    email             VARCHAR(50) NULL,
-    telefono          VARCHAR(8) NULL,
+    email             VARCHAR(50) COLLATE utf8_unicode_ci NULL,
+    telefono          VARCHAR(8) COLLATE utf8_unicode_ci NULL,
     cui               DECIMAL(13,0) NULL,
     nov               DECIMAL(10,0) NULL,
     regpersonal       DECIMAL(9,0) NULL,
     carnet            DECIMAL(9,0) NULL,
+    carrera           VARCHAR(120) COLLATE utf8_unicode_ci NULL,
+    departamento      VARCHAR(120) COLLATE utf8_unicode_ci NULL,
     created           TIMESTAMP NOT NULL DEFAULT NOW(),
     updated           TIMESTAMP NOT NULL DEFAULT NOW(),
     source            VARCHAR(120) NOT NULL DEFAULT 'CREATED',
     activo            BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_persona)
-);
+) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
 
@@ -699,6 +701,30 @@ ALTER TABLE programasalud.cita
 
 
 
+
+DROP TABLE IF EXISTS programasalud.flujo_cita;
+
+CREATE TABLE programasalud.flujo_cita
+(
+    id_flujo_cita               INT AUTO_INCREMENT NOT NULL,
+    id_cita                     INT NOT NULL,
+    paso                        ENUM('CREADO', 'ATENDIENDO', 'EDITADO', 'FINALIZADO', 'CANCELADO') NOT NULL DEFAULT 'CREADO',
+    creado                      DATETIME NOT NULL DEFAULT NOW(),
+    actualizado                 DATETIME NOT NULL DEFAULT NOW(),
+    observaciones               VARCHAR(500) NULL,
+    flg_automatico              BOOLEAN NOT NULL DEFAULT TRUE,
+    activo                      BOOLEAN NOT NULL DEFAULT TRUE,
+    flujo_cita_padre            INT NULL,
+    PRIMARY KEY(id_flujo_cita)
+);
+
+ALTER TABLE programasalud.flujo_cita
+    ADD CONSTRAINT FK_flujo_cita_cita FOREIGN KEY(id_cita)
+        REFERENCES programasalud.cita (id_cita);
+
+ALTER TABLE programasalud.flujo_cita
+    ADD CONSTRAINT FK_flujo_cita_flujo_cita FOREIGN KEY(flujo_cita_padre)
+        REFERENCES programasalud.flujo_cita (id_flujo_cita);
 
 
 

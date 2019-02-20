@@ -2970,7 +2970,7 @@ END;
 
 CREATE OR REPLACE FUNCTION programasalud.create_or_update_student_from_cc (p_nombre VARCHAR(500), p_apellido VARCHAR(500), p_fecha_nacimiento VARCHAR(10),
                                             p_sexo VARCHAR(50), p_email VARCHAR(50),
-                                            p_cui VARCHAR(13), p_nov VARCHAR(10), p_carnet VARCHAR(9))
+                                            p_cui VARCHAR(13), p_nov VARCHAR(10), p_carnet VARCHAR(9), p_carrera VARCHAR(120))
                                             RETURNS INT
 BEGIN
     DECLARE v_temp INT;
@@ -2989,12 +2989,12 @@ BEGIN
     IF v_temp = -1 THEN
         INSERT INTO programasalud.persona (nombre, apellido,
                                        fecha_nacimiento, sexo, email,
-                                           cui, nov, carnet, source)
+                                           cui, nov, carnet, carrera, source)
         VALUES ( UPPER(TRIM(p_nombre)), UPPER(TRIM(p_apellido)),
                  str_to_date(TRIM(p_fecha_nacimiento),'%Y-%m-%d'), UPPER(TRIM(p_sexo)), LOWER(TRIM(p_email)),
                 if(p_cui is null or p_cui='',null,p_cui),
                 if(p_nov is null or p_nov='',null,p_nov),
-                if(p_carnet is null or p_carnet='',null,p_carnet), 'CC');
+                if(p_carnet is null or p_carnet='',null,p_carnet), p_carrera, 'CC_STUDENT');
 
         SET v_temp = LAST_INSERT_ID();
         RETURN v_temp;
@@ -3009,6 +3009,7 @@ BEGIN
             cui = if(p_cui is null or p_cui='',null,p_cui),
             nov = if(p_nov is null or p_nov='',null,p_nov),
             carnet = if(p_carnet is null or p_carnet='',null,p_carnet),
+            carrera = p_carrera,
             updated = now()
         WHERE id_persona = v_temp;
         RETURN v_temp;
@@ -3021,15 +3022,15 @@ END;
 
 CREATE OR REPLACE PROCEDURE programasalud.get_student_from_cc (IN p_nombre VARCHAR(500), IN p_apellido VARCHAR(500), IN p_fecha_nacimiento VARCHAR(10),
                                             IN p_sexo VARCHAR(50), IN p_email VARCHAR(50),
-                                            IN p_cui VARCHAR(13), IN p_nov VARCHAR(10), IN p_carnet VARCHAR(9))
+                                            IN p_cui VARCHAR(13), IN p_nov VARCHAR(10), IN p_carnet VARCHAR(9), IN p_carrera VARCHAR(120))
 BEGIN
     DECLARE v_temp INT;
 
-    SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_cui,p_nov, p_carnet);
+    SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_cui,p_nov, p_carnet, p_carrera);
 
         SELECT p.id_persona, p.nombre, p.telefono, p.apellido, CONCAT(nombre,' ',apellido) nombre_completo,
            DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, p.sexo, p.email,
-           p.cui, p.nov, p.carnet
+           p.cui, p.nov, p.carnet, p.carrera carrera_depto
     FROM programasalud.persona p
     where p.id_persona=v_temp;
 
@@ -3077,7 +3078,8 @@ BEGIN
     OR (p.carnet like concat('%',p_id,'%') AND p.carnet is not null AND p_id!='')
     OR (p.nov like concat('%',p_id,'%') AND p.nov is not null AND p_id!='')
     OR (p.regpersonal like concat('%',p_id,'%') AND p.regpersonal is not null AND p_id!='')
-        limit 50;
+    OR (UPPER(CONCAT(p.nombre,' ',p.apellido)) LIKE CONCAT('%',REPLACE(UPPER(p_id COLLATE utf8_unicode_ci), ' ', '%'),'%'))
+        limit 30;
 
 
 END;
@@ -3237,7 +3239,7 @@ END;
 
 CREATE OR REPLACE FUNCTION programasalud.create_or_update_employee_from_cc (p_nombre VARCHAR(500), p_apellido VARCHAR(500), p_fecha_nacimiento VARCHAR(10),
                                             p_sexo VARCHAR(50), p_email VARCHAR(50),
-                                            p_cui VARCHAR(13), p_regpersonal VARCHAR(9))
+                                            p_cui VARCHAR(13), p_regpersonal VARCHAR(9), p_departamento VARCHAR(120))
                                             RETURNS INT
 BEGIN
     DECLARE v_temp INT;
@@ -3254,12 +3256,12 @@ BEGIN
     IF v_temp = -1 THEN
         INSERT INTO programasalud.persona (nombre, apellido,
                                        fecha_nacimiento, sexo, email,
-                                           cui, regpersonal, source)
+                                           cui, regpersonal, departamento, source)
         VALUES ( UPPER(TRIM(p_nombre)), UPPER(TRIM(p_apellido)),
                  str_to_date(TRIM(p_fecha_nacimiento),'%Y-%m-%d'), UPPER(TRIM(p_sexo)), LOWER(TRIM(p_email)),
                 if(p_cui is null or p_cui='',null,p_cui),
-                if(p_regpersonal is null or p_regpersonal='',null,p_regpersonal),
-                'CC');
+                if(p_regpersonal is null or p_regpersonal='',null,p_regpersonal), p_departamento,
+                'CC_EMPLOYEE');
 
         SET v_temp = LAST_INSERT_ID();
         RETURN v_temp;
@@ -3273,6 +3275,7 @@ BEGIN
             email = LOWER(TRIM(p_email)),
             cui = if(p_cui is null or p_cui='',null,p_cui),
             regpersonal = if(p_regpersonal is null or p_regpersonal='',null,p_regpersonal),
+            departamento = p_departamento,
             updated = now()
         WHERE id_persona = v_temp;
         RETURN v_temp;
@@ -3290,11 +3293,11 @@ END;
 
 CREATE OR REPLACE PROCEDURE programasalud.get_employee_from_cc (IN p_nombre VARCHAR(500), IN p_apellido VARCHAR(500), IN p_fecha_nacimiento VARCHAR(10),
                                             IN p_sexo VARCHAR(50), IN p_email VARCHAR(50),
-                                            IN p_cui VARCHAR(13), IN p_regpersonal VARCHAR(9))
+                                            IN p_cui VARCHAR(13), IN p_regpersonal VARCHAR(9), IN p_departamento VARCHAR(120))
 BEGIN
     DECLARE v_temp INT;
 
-    SET v_temp = create_or_update_employee_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_cui,p_regpersonal);
+    SET v_temp = create_or_update_employee_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_cui,p_regpersonal, p_departamento);
 
         SELECT p.id_persona, p.nombre, p.telefono, p.apellido, CONCAT(nombre,' ',apellido) nombre_completo,
            DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, p.sexo, p.email,
@@ -3381,7 +3384,7 @@ BEGIN
     FROM
         seleccion_persona s
     JOIN persona p on s.id_persona = p.id_persona
-    JOIN seleccion s2 on s.id_seleccion = s2.id_seleccion
+    JOIN seleccion s2 on s.id_seleccion = s2.id_seleccion AND s2.activo
     WHERE
         s.activo;
 
@@ -3403,7 +3406,7 @@ BEGIN
     FROM
         seleccion_persona s
     JOIN persona p on s.id_persona = p.id_persona
-    JOIN seleccion s2 on s.id_seleccion = s2.id_seleccion
+    JOIN seleccion s2 on s.id_seleccion = s2.id_seleccion AND s2.activo
     WHERE
         s.activo
         AND s.id_seleccion_persona = p_id_seleccion_persona;
@@ -3838,7 +3841,7 @@ BEGIN
         cp.id_capacitacion_persona, cp.id_capacitacion, c.nombre nombre_capacitacion,
            cp.id_persona, concat(p.nombre,' ',p.apellido) nombre_persona
     FROM programasalud.capacitacion_persona cp
-    JOIN programasalud.capacitacion c ON cp.id_capacitacion = c.id_capacitacion
+    JOIN programasalud.capacitacion c ON cp.id_capacitacion = c.id_capacitacion AND c.activo
     JOIN programasalud.persona p ON cp.id_persona = p.id_persona
     WHERE cp.activo;
 
@@ -3856,7 +3859,7 @@ BEGIN
         cp.id_capacitacion_persona, cp.id_capacitacion, c.nombre nombre_capacitacion,
            cp.id_persona, concat(p.nombre,' ',p.apellido) nombre_persona
     FROM programasalud.capacitacion_persona cp
-    JOIN programasalud.capacitacion c ON cp.id_capacitacion = c.id_capacitacion
+    JOIN programasalud.capacitacion c ON cp.id_capacitacion = c.id_capacitacion AND c.activo
     JOIN programasalud.persona p ON cp.id_persona = p.id_persona
     WHERE cp.activo
     AND cp.id_capacitacion_persona = p_id_capacitacion_persona;
@@ -4098,6 +4101,9 @@ BEGIN
                    (p_id_clinica, p_id_persona, p_id_doctor, v_fecha, LOWER(p_email), UPPER(p_sintoma));
 
                 SET o_result = LAST_INSERT_ID();
+
+                INSERT INTO programasalud.flujo_cita(ic_cita) VALUES (o_result);
+
                 SET o_mensaje = 'Registro ingresado correctamente';
             END IF;
         END IF;
@@ -4125,8 +4131,10 @@ BEGIN
     JOIN usuario u on d.id_usuario = u.id_usuario
     JOIN persona p2 on u.id_persona = p2.id_persona
     JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    JOIN flujo_cita fc on c.id_cita = fc.id_cita AND fc.activo
     WHERE c.activo
     AND date(c.fecha) = date(now())
+    AND fc.paso NOT IN ('FINALIZADO','CANCELADO')
     AND u.id_usuario=p_id_usuario
     ORDER BY c.fecha;
 END;
@@ -4148,8 +4156,10 @@ BEGIN
     JOIN usuario u on d.id_usuario = u.id_usuario
     JOIN persona p2 on u.id_persona = p2.id_persona
     JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    JOIN flujo_cita fc on c.id_cita = fc.id_cita AND fc.activo
     WHERE c.activo
     AND date(c.fecha) > date(now())
+    AND fc.paso NOT IN ('FINALIZADO','CANCELADO')
     AND u.id_usuario=p_id_usuario
     ORDER BY c.fecha;
 END;
@@ -4167,8 +4177,10 @@ BEGIN
     JOIN usuario u on d.id_usuario = u.id_usuario
     JOIN persona p2 on u.id_persona = p2.id_persona
     JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    JOIN flujo_cita fc on c.id_cita = fc.id_cita AND fc.activo
     WHERE c.activo
     AND c.id_cita = p_id_cita
+    AND fc.paso NOT IN ('FINALIZADO','CANCELADO')
     AND u.id_usuario=p_id_usuario;
 END;
 
@@ -4183,6 +4195,7 @@ CREATE OR REPLACE PROCEDURE programasalud.update_appointment (IN p_id_cita INT, 
 BEGIN
 
     DECLARE v_temp INT;
+    DECLARE v_paso ENUM('CREADO', 'ATENDIENDO', 'EDITADO', 'FINALIZADO', 'CANCELADO');
     DECLARE v_fecha DATETIME;
 
     DECLARE v_id_persona INT;
@@ -4209,6 +4222,8 @@ BEGIN
     START TRANSACTION;
 
     SET v_fecha = str_to_date(concat(p_fecha,' ',p_hora),'%d/%m/%Y %H:%i');
+
+
 
     SELECT count(1), c.id_persona INTO v_temp, v_id_persona
     FROM cita c
@@ -4259,6 +4274,27 @@ BEGIN
                 WHERE
                       id_cita=p_id_cita;
 
+                SELECT id_flujo_cita, paso INTO v_temp, v_paso
+                FROM flujo_cita
+                WHERE id_cita = p_id_cita
+                AND activo;
+
+                IF v_paso = 'EDITADO' THEN
+                    UPDATE flujo_cita f
+                    SET actualizado = now()
+                    WHERE f.id_cita = p_id_cita
+                    AND activo=1;
+                ELSE
+                    UPDATE flujo_cita f
+                    SET activo = 0,
+                    actualizado = now()
+                    WHERE f.id_cita = p_id_cita
+                    AND activo=1;
+
+                    INSERT INTO flujo_cita (id_cita, paso, flujo_cita_padre)
+                    VALUES (p_id_cita,'EDITADO',v_temp);
+                END IF;
+
                 SET o_result = p_id_cita;
                 SET o_mensaje = 'Registro ingresado correctamente';
             END IF;
@@ -4300,12 +4336,29 @@ BEGIN
 
 
     if o_result>0 THEN
+
         UPDATE
             cita c
         SET
             c.activo=false
         WHERE
             c.id_cita = p_id_cita;
+
+
+        SELECT id_flujo_cita INTO o_result
+        FROM flujo_cita
+        WHERE id_cita = p_id_cita
+        AND activo;
+
+        UPDATE flujo_cita f
+        SET activo = 0,
+        actualizado = now()
+        WHERE f.id_cita = o_result
+        AND activo=1;
+
+        INSERT INTO flujo_cita (id_cita, paso, flujo_cita_padre)
+        VALUES (p_id_cita,'CANCELADO',o_result);
+
         SET o_mensaje = 'Registro actualizado correctamente';
     ELSE
         SET o_mensaje = 'Registro no existe';
@@ -4337,4 +4390,61 @@ BEGIN
     WHERE cm.activo;
 
 END;
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.start_appointment(IN p_id_cita INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE v_paso ENUM('CREADO', 'ATENDIENDO', 'EDITADO', 'FINALIZADO', 'CANCELADO');
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    START TRANSACTION;
+
+    SET v_temp = -1;
+
+    SELECT count(1), fc.paso INTO v_temp, v_paso
+    FROM cita c
+    JOIN flujo_cita fc ON c.id_cita = fc.id_cita AND fc.paso NOT IN ('FINALIZADO', 'CANCELADO') AND fc.activo
+    WHERE c.activo AND c.id_cita=p_id_cita;
+
+    if v_temp>0 THEN
+        IF v_paso IN ('CREADO', 'EDITADO') THEN
+            SELECT id_flujo_cita INTO o_result
+            FROM flujo_cita
+            WHERE id_cita = p_id_cita
+            AND activo;
+
+            UPDATE flujo_cita f
+            SET activo = 0,
+            actualizado = now()
+            WHERE f.id_cita = o_result
+            AND activo=1;
+
+            INSERT INTO flujo_cita (id_cita, paso, flujo_cita_padre)
+            VALUES (p_id_cita,'ATENDIENDO',o_result);
+        END IF;
+        SET o_mensaje = 'Registro actualizado correctamente';
+    ELSE
+        SET o_mensaje = 'La cita ya fue cancelada o finalizada';
+    END IF;
+
+
+    COMMIT;
+
+END;
+
 
