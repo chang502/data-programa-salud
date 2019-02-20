@@ -1,19 +1,43 @@
 
+DROP DATABASE IF EXISTS programasalud;
+
+CREATE DATABASE programasalud CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+DROP USER IF EXISTS saludfiusac;
+
+CREATE OR REPLACE USER 'saludfiusac' IDENTIFIED BY 'progsalud';
+
+
+grant all privileges on programasalud.* to saludfiusac@'%' identified by 'progsalud';
+
+USE programasalud;
+
+
+select * from mysql.user
+
 DROP TABLE IF EXISTS programasalud.persona;
 
 CREATE TABLE programasalud.persona
 (
     id_persona        INT AUTO_INCREMENT NOT NULL,
-    primer_nombre     VARCHAR(50) NOT NULL,
-    segundo_nombre    VARCHAR(50) NULL,
-    primer_apellido   VARCHAR(50) NOT NULL,
-    segundo_apellido  VARCHAR(50) NULL,
+    nombre            VARCHAR(500) COLLATE utf8_unicode_ci NOT NULL,
+    apellido          VARCHAR(500) COLLATE utf8_unicode_ci NOT NULL,
     fecha_nacimiento  DATE NOT NULL,
     sexo              CHAR(1) NOT NULL,
-    email             VARCHAR(50) NULL,
-    telefono          VARCHAR(8) NULL,
+    email             VARCHAR(50) COLLATE utf8_unicode_ci NULL,
+    telefono          VARCHAR(8) COLLATE utf8_unicode_ci NULL,
+    cui               DECIMAL(13,0) NULL,
+    nov               DECIMAL(10,0) NULL,
+    regpersonal       DECIMAL(9,0) NULL,
+    carnet            DECIMAL(9,0) NULL,
+    carrera           VARCHAR(120) COLLATE utf8_unicode_ci NULL,
+    departamento      VARCHAR(120) COLLATE utf8_unicode_ci NULL,
+    created           TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated           TIMESTAMP NOT NULL DEFAULT NOW(),
+    source            VARCHAR(120) NOT NULL DEFAULT 'CREATED',
+    activo            BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_persona)
-);
+) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 DROP TABLE IF EXISTS programasalud.usuario;
 
@@ -22,8 +46,8 @@ CREATE TABLE programasalud.usuario
     id_usuario    VARCHAR(50) NOT NULL,
     clave         CHAR(64) NOT NULL,
     id_persona    INT(11) NOT NULL,
-    activo        BOOLEAN NOT NULL,
     cambiar_clave BOOLEAN NOT NULL,
+    activo        BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_usuario)
 );
 
@@ -39,7 +63,7 @@ CREATE TABLE programasalud.rol
     id_rol             INT NOT NULL,
     nombre_rol         VARCHAR(40) NOT NULL,
     descripcion_rol    VARCHAR(100) NULL,
-    activo             BOOLEAN NOT NULL,
+    activo             BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_rol)
 );
 
@@ -52,7 +76,7 @@ CREATE TABLE programasalud.usuario_rol
     id_usuario_rol    INTEGER(20) AUTO_INCREMENT NOT NULL,
     id_usuario        VARCHAR(50) NOT NULL,
     id_rol            INT(11) NOT NULL,
-    activo            BOOLEAN NOT NULL,
+    activo            BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY(id_usuario_rol)
 );
 
@@ -76,7 +100,7 @@ CREATE TABLE programasalud.especialidad
 (
     id_especialidad   INT AUTO_INCREMENT NOT NULL,
     especialidad      VARCHAR(50) NOT NULL,
-    activo            BOOLEAN NOT NULL,
+    activo            BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_especialidad)
 );
 
@@ -93,7 +117,7 @@ CREATE TABLE programasalud.doctor
 (
     id_doctor         INT(20) AUTO_INCREMENT NOT NULL,
     id_usuario        VARCHAR(50) NOT NULL,
-    activo            BOOLEAN NOT NULL,
+    activo            BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_doctor)
 );
 
@@ -134,7 +158,8 @@ CREATE TABLE programasalud.clinica
     nombre          VARCHAR(50) NOT NULL,
     ubicacion       VARCHAR(50) NOT NULL,
     descripcion     VARCHAR(255) NULL,
-    activo          BOOLEAN NOT NULL,
+    columnas        TINYINT NOT NULL DEFAULT 1,
+    activo          BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_clinica)
 );
 
@@ -146,7 +171,7 @@ CREATE TABLE programasalud.tipo_dato_medida
 (
     id_tipo_dato   INT  NOT NULL,
     tipo_dato      VARCHAR(50) NOT NULL,
-    activo         BOOLEAN NOT NULL,
+    activo         BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_tipo_dato)
 );
 
@@ -172,7 +197,8 @@ CREATE TABLE programasalud.medida
     valor_minimo    VARCHAR(50) NULL,
     valor_maximo    VARCHAR(50) NULL,
     obligatorio     BOOLEAN NOT NULL,
-    activo          BOOLEAN NOT NULL,
+    colspan         TINYINT NOT NULL DEFAULT 1,
+    activo          BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_medida)
 );
 
@@ -247,7 +273,7 @@ CREATE TABLE programasalud.bebedero
     fecha_mantenimiento     DATE NOT NULL,
     estado                  VARCHAR(200) NOT NULL,
     observaciones           VARCHAR(1000),
-    activo                  BOOLEAN NOT NULL,
+    activo                  BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_bebedero)
 );
 
@@ -308,7 +334,7 @@ CREATE TABLE programasalud.tipo_discapacidad
 (
     id_tipo_discapacidad    INT AUTO_INCREMENT NOT NULL,
     nombre                  VARCHAR(250) NOT NULL,
-    activo                  BOOLEAN NOT NULL,
+    activo                  BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_tipo_discapacidad)
 );
 
@@ -335,7 +361,7 @@ CREATE TABLE programasalud.seleccion
     descripcion               VARCHAR(255),
     especialidad              VARCHAR(255) NOT NULL,
     estado                    VARCHAR(255) NOT NULL,
-    activo                    BOOLEAN NOT NULL,
+    activo                    BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_seleccion)
 );
 
@@ -360,7 +386,7 @@ CREATE TABLE programasalud.tipo_persona
 (
     id_tipo_persona         INT AUTO_INCREMENT NOT NULL,
     nombre                  VARCHAR(255) NOT NULL,
-    activo                  BOOLEAN NOT NULL,
+    activo                  BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_tipo_persona)
 );
 
@@ -384,7 +410,7 @@ CREATE TABLE programasalud.campeonato
     fecha                DATE NOT NULL,
     victorioso           BOOLEAN NOT NULL,
     observaciones        VARCHAR(255) NULL,
-    activo               BOOLEAN NOT NULL,
+    activo               BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_campeonato)
 );
 
@@ -419,7 +445,7 @@ CREATE TABLE programasalud.tipo_documento
 
 
 
-
+/*
 
 
 delete from estudiante_deportes;
@@ -429,6 +455,8 @@ delete from disciplina;
 DROP TABLE IF EXISTS programasalud.estudiante_deportes;
 DROP TABLE IF EXISTS programasalud.asignacion_deportes;
 DROP TABLE IF EXISTS programasalud.disciplina;
+
+*/
 
 CREATE TABLE programasalud.disciplina
 (
@@ -462,13 +490,14 @@ ALTER TABLE programasalud.disciplina
 
 
 
-
+/*
 DROP TABLE IF EXISTS programasalud.estudiante_deportes;
 DROP TABLE IF EXISTS programasalud.asignacion_deportes;
+*/
 
 CREATE TABLE programasalud.asignacion_deportes
 (
-    id_estudiante_deportes    INT AUTO_INCREMENT NOT NULL,
+    id_asignacion_deportes    INT AUTO_INCREMENT NOT NULL,
     id_tipo_documento         INT NOT NULL,
     numero_documento          VARCHAR(200),
     email                     VARCHAR(50),
@@ -480,24 +509,24 @@ CREATE TABLE programasalud.asignacion_deportes
     semestre                  VARCHAR(6) NOT NULL,
     id_persona                INT NOT NULL,
     activo                    BOOLEAN NOT NULL DEFAULT TRUE,
-    PRIMARY KEY(id_estudiante_deportes)
+    PRIMARY KEY(id_asignacion_deportes)
 );
 
 ALTER TABLE programasalud.asignacion_deportes
-    ADD CONSTRAINT FK_estudiante_deportes_persona FOREIGN KEY(id_persona)
+    ADD CONSTRAINT FK_asignacion_deportes_persona FOREIGN KEY(id_persona)
         REFERENCES programasalud.persona (id_persona);
 
 ALTER TABLE programasalud.asignacion_deportes
-    ADD CONSTRAINT FK_estudiante_deportes_tipo_documento FOREIGN KEY(id_tipo_documento)
+    ADD CONSTRAINT FK_asignacion_deportes_tipo_documento FOREIGN KEY(id_tipo_documento)
         REFERENCES programasalud.tipo_documento (id_tipo_documento);
 
 ALTER TABLE programasalud.asignacion_deportes
-    ADD CONSTRAINT FK_estudiante_deportes_disciplina FOREIGN KEY(id_disciplina)
+    ADD CONSTRAINT FK_asignacion_deportes_disciplina FOREIGN KEY(id_disciplina)
         REFERENCES programasalud.disciplina (id_disciplina);
 
 
 ALTER TABLE programasalud.asignacion_deportes
-    ADD CONSTRAINT FK_estudiante_deportes_tipo_discapacidad FOREIGN KEY(id_tipo_discapacidad)
+    ADD CONSTRAINT FK_asignacion_deportes_tipo_discapacidad FOREIGN KEY(id_tipo_discapacidad)
         REFERENCES programasalud.tipo_discapacidad (id_tipo_discapacidad);
 
 
@@ -525,49 +554,18 @@ ALTER TABLE programasalud.asignacion_deportes
 
 
 
-ALTER TABLE programasalud.usuario
-    DROP foreign key FK_persona_usuario;
-
-
-ALTER TABLE programasalud.disciplina
-    DROP foreign key FK_disciplina_persona;
-
-
-ALTER TABLE programasalud.asignacion_deportes
-    DROP foreign key FK_estudiante_deportes_persona;
 
 
 
 
 
-DROP TABLE IF EXISTS programasalud.persona;
-
-CREATE TABLE programasalud.persona
-(
-    id_persona        INT AUTO_INCREMENT NOT NULL,
-    nombre            VARCHAR(500) COLLATE utf8_unicode_ci NOT NULL,
-    apellido          VARCHAR(500) COLLATE utf8_unicode_ci NOT NULL,
-    fecha_nacimiento  DATE NOT NULL,
-    sexo              CHAR(1) NOT NULL,
-    email             VARCHAR(50) COLLATE utf8_unicode_ci NULL,
-    telefono          VARCHAR(8) COLLATE utf8_unicode_ci NULL,
-    cui               DECIMAL(13,0) NULL,
-    nov               DECIMAL(10,0) NULL,
-    regpersonal       DECIMAL(9,0) NULL,
-    carnet            DECIMAL(9,0) NULL,
-    carrera           VARCHAR(120) COLLATE utf8_unicode_ci NULL,
-    departamento      VARCHAR(120) COLLATE utf8_unicode_ci NULL,
-    created           TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated           TIMESTAMP NOT NULL DEFAULT NOW(),
-    source            VARCHAR(120) NOT NULL DEFAULT 'CREATED',
-    activo            BOOLEAN NOT NULL DEFAULT TRUE,
-    PRIMARY KEY(id_persona)
-) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
 
 
 
+
+/*
 DELETE FROM usuario;
 
 ALTER TABLE programasalud.usuario
@@ -587,7 +585,7 @@ ALTER TABLE programasalud.asignacion_deportes
     ADD CONSTRAINT FK_estudiante_deportes_persona FOREIGN KEY(id_persona)
         REFERENCES programasalud.persona (id_persona);
 
-
+*/
 
 
 
