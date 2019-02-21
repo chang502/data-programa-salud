@@ -4124,7 +4124,7 @@ END;
 CREATE OR REPLACE PROCEDURE programasalud.get_todays_appointments(IN p_id_usuario VARCHAR(50))
 BEGIN
     SELECT c.id_cita, DATE_FORMAT(c.fecha,'%d/%m/%Y') fecha, DATE_FORMAT(c.fecha,'%H:%i') hora, p.id_persona id_paciente, concat(p.nombre,' ',p.apellido) paciente,
-           p2.id_persona id_atiende, concat(p2.nombre,' ',p2.apellido) atiende, c2.id_clinica, c2.nombre clinica, c.sintoma
+           p2.id_persona id_atiende, concat(p2.nombre,' ',p2.apellido) atiende, c2.id_clinica, c2.nombre clinica, c.sintoma, fc.paso
     FROM cita c
     JOIN persona p on c.id_persona = p.id_persona
     JOIN doctor d on c.id_doctor = d.id_doctor
@@ -4415,6 +4415,7 @@ BEGIN
     START TRANSACTION;
 
     SET v_temp = -1;
+    SET o_result = -1;
 
     SELECT count(1), fc.paso INTO v_temp, v_paso
     FROM cita c
@@ -4437,6 +4438,7 @@ BEGIN
             INSERT INTO flujo_cita (id_cita, paso, flujo_cita_padre)
             VALUES (p_id_cita,'ATENDIENDO',o_result);
         END IF;
+        SET o_result = p_id_cita;
         SET o_mensaje = 'Registro actualizado correctamente';
     ELSE
         SET o_mensaje = 'La cita ya fue cancelada o finalizada';
@@ -4448,3 +4450,35 @@ BEGIN
 END;
 
 
+
+
+/*
+**************************************************************
+**************************************************************
+**************************************************************
+**************************************************************
+**************************************************************
+**************************************************************
+**************************************************************
+ */
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.attend_appointment(IN p_id_usuario VARCHAR(50), IN p_id_cita INT)
+BEGIN
+    SELECT c.id_cita, DATE_FORMAT(c.fecha,'%d/%m/%Y') fecha, DATE_FORMAT(c.fecha,'%H:%i') hora, p.id_persona id_paciente, concat(p.nombre,' ',p.apellido) paciente,
+           p2.id_persona id_atiende, concat(p2.nombre,' ',p2.apellido) atiende, c2.id_clinica, c2.nombre clinica, c.sintoma, fc.paso
+    FROM cita c
+    JOIN persona p on c.id_persona = p.id_persona
+    JOIN doctor d on c.id_doctor = d.id_doctor
+    JOIN usuario u on d.id_usuario = u.id_usuario
+    JOIN persona p2 on u.id_persona = p2.id_persona
+    JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    JOIN flujo_cita fc on c.id_cita = fc.id_cita AND fc.activo
+    WHERE c.activo
+    AND date(c.fecha) = date(now())
+    AND fc.paso = 'ATENDIENDO'
+    AND u.id_usuario=p_id_usuario
+    AND c.id_cita = p_id_cita
+    ORDER BY c.fecha;
+END;
