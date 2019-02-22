@@ -80,3 +80,14 @@ INSERT INTO tipo_documento (nombre, alcance) VALUES ('Registro Académico','Estu
 INSERT INTO tipo_documento (nombre, alcance) VALUES ('Número de Orientación Vocacional','Estudiante');
 INSERT INTO tipo_documento (nombre, alcance) VALUES ('CUI','General');
 INSERT INTO tipo_documento (nombre, alcance) VALUES ('Registro Personal','Empleado');
+
+
+
+
+
+
+
+INSERT INTO accion (nombre)
+VALUES
+('Laboratorios'),
+('Medicina');

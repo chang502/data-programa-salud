@@ -749,7 +749,55 @@ ALTER TABLE programasalud.flujo_cita
 
 
 
+DROP TABLE IF EXISTS programasalud.accion;
 
+CREATE TABLE programasalud.accion
+(
+    id_accion               INT AUTO_INCREMENT NOT NULL,
+    nombre                  VARCHAR(150) NOT NULL,
+    activo                  BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_accion)
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DROP TABLE IF EXISTS programasalud.persona_medida;
+
+CREATE TABLE programasalud.persona_medida
+(
+    id_persona_medida       INT AUTO_INCREMENT NOT NULL,
+    id_medida               INT NOT NULL,
+    id_persona              INT NOT NULL,
+    id_cita                 INT NULL,
+    valor                   VARCHAR(150) NOT NULL,
+    creado                  DATETIME NOT NULL DEFAULT NOW(),
+    activo                  BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_persona_medida)
+);
+
+ALTER TABLE programasalud.persona_medida
+    ADD CONSTRAINT FK_persona_medida_medida FOREIGN KEY(id_medida)
+        REFERENCES programasalud.medida (id_medida);
+
+ALTER TABLE programasalud.persona_medida
+    ADD CONSTRAINT FK_persona_medida_persona FOREIGN KEY(id_persona)
+        REFERENCES programasalud.persona (id_persona);
+
+ALTER TABLE programasalud.persona_medida
+    ADD CONSTRAINT FK_persona_medida_cita FOREIGN KEY(id_cita)
+        REFERENCES programasalud.cita (id_cita);
 
 
 

@@ -4102,7 +4102,7 @@ BEGIN
 
                 SET o_result = LAST_INSERT_ID();
 
-                INSERT INTO programasalud.flujo_cita(ic_cita) VALUES (o_result);
+                INSERT INTO programasalud.flujo_cita(id_cita) VALUES (o_result);
 
                 SET o_mensaje = 'Registro ingresado correctamente';
             END IF;
@@ -4282,13 +4282,13 @@ BEGIN
                 IF v_paso = 'EDITADO' THEN
                     UPDATE flujo_cita f
                     SET actualizado = now()
-                    WHERE f.id_cita = p_id_cita
+                    WHERE f.id_flujo_cita = v_temp
                     AND activo=1;
                 ELSE
                     UPDATE flujo_cita f
                     SET activo = 0,
                     actualizado = now()
-                    WHERE f.id_cita = p_id_cita
+                    WHERE f.id_flujo_cita = v_temp
                     AND activo=1;
 
                     INSERT INTO flujo_cita (id_cita, paso, flujo_cita_padre)
@@ -4353,7 +4353,7 @@ BEGIN
         UPDATE flujo_cita f
         SET activo = 0,
         actualizado = now()
-        WHERE f.id_cita = o_result
+        WHERE f.id_flujo_cita = o_result
         AND activo=1;
 
         INSERT INTO flujo_cita (id_cita, paso, flujo_cita_padre)
@@ -4379,7 +4379,7 @@ END;
 CREATE OR REPLACE PROCEDURE programasalud.get_appointment_measurements(IN p_id_cita INT, IN p_id_usuario VARCHAR(50))
 BEGIN
 
-    SELECT m.nombre fieldLabel, tdm.tipo_dato, coalesce(m.unidad_medida,'') unidad_medida,
+    SELECT m.id_medida, m.nombre fieldLabel, tdm.tipo_dato, coalesce(m.unidad_medida,'') unidad_medida,
         m.valor_minimo, m.valor_maximo, if(m.obligatorio=1,'true','false') obligatorio from clinica_medida cm
     JOIN clinica c on cm.id_clinica = c.id_clinica
     JOIN medida m on cm.id_medida = m.id_medida
@@ -4432,7 +4432,7 @@ BEGIN
             UPDATE flujo_cita f
             SET activo = 0,
             actualizado = now()
-            WHERE f.id_cita = o_result
+            WHERE f.id_flujo_cita = o_result
             AND activo=1;
 
             INSERT INTO flujo_cita (id_cita, paso, flujo_cita_padre)
@@ -4481,4 +4481,201 @@ BEGIN
     AND u.id_usuario=p_id_usuario
     AND c.id_cita = p_id_cita
     ORDER BY c.fecha;
+END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.create_action(IN p_nombre VARCHAR(150), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+    DECLARE v_temp INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    START TRANSACTION;
+
+    SET v_temp = -1;
+    SET o_result = -1;
+
+    SELECT count(1) INTO v_temp
+    FROM accion a
+    WHERE lower(TRIM(a.nombre)) = lower(TRIM(p_nombre))
+    AND a.activo;
+
+    IF v_temp>0 THEN
+        SET o_mensaje = 'Ya existe una acción con ese nombre';
+    ELSE
+        INSERT INTO accion(nombre)VALUES(INITCAP(p_nombre));
+        SET o_result = LAST_INSERT_ID();
+        SET o_mensaje = 'Registro ingresado correctamente';
+    END IF;
+    COMMIT;
+END;
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_actions()
+BEGIN
+    SELECT
+        a.id_accion, a.nombre
+    FROM accion a
+    WHERE a.activo;
+END;
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_action(IN p_id_accion INT)
+BEGIN
+    SELECT
+        a.id_accion, a.nombre
+    FROM accion a
+    WHERE a.activo
+    AND a.id_accion=p_id_accion;
+END;
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.update_action( IN p_id_accion INT, IN p_nombre VARCHAR(150),
+                                                   OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    SET v_temp = -1;
+
+    START TRANSACTION;
+
+
+    SELECT count(1) INTO v_temp
+    FROM accion a
+    WHERE lower(TRIM(a.nombre)) = lower(TRIM(p_nombre))
+    AND a.activo AND a.id_accion !=  p_id_accion;
+
+
+    IF o_result > 0 THEN
+        SET o_result = -1;
+        SET o_mensaje = 'Ya existe una acción con ese nombre';
+
+    ELSE
+        UPDATE accion SET nombre = initcap(p_nombre) WHERE id_accion = p_id_accion;
+        SET o_mensaje = 'Registro actualizado correctamente';
+        SET o_result = p_id_accion;
+    END IF;
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_action(IN p_id_accion INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    START TRANSACTION;
+
+    SELECT COUNT(*) INTO o_result
+    FROM accion b
+    WHERE b.id_accion = p_id_accion;
+
+
+    if o_result>0 THEN
+        UPDATE
+            accion b
+        SET
+            b.activo=false
+        WHERE
+                b.id_accion = p_id_accion;
+        SET o_mensaje = 'Registro actualizado correctamente';
+    ELSE
+        SET o_mensaje = 'Registro no existe';
+    END IF;
+
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.create_persona_medida(IN p_id_medida INT, IN p_id_persona INT, IN p_id_cita INT, IN p_valor VARCHAR(150), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    INSERT INTO persona_medida (id_medida, id_persona, id_cita, valor)
+    VALUES (p_id_medida, p_id_persona, p_id_cita, p_valor);
+
+    SET o_result = LAST_INSERT_ID();
+    SET o_mensaje = o_result;
+END;
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_measurement_history(IN p_id_cita INT)
+BEGIN
+    SELECT pm.id_persona_medida, date_format(pm.creado,'%d/%m/%Y') fecha,
+           date_format(pm.creado,'%h:%i') hora, c2.nombre clinica,
+           CONCAT(p2.nombre,' ',p2.apellido) atiende, m.nombre medida,
+           pm.valor, m.unidad_medida unidad FROM persona_medida pm
+    JOIN persona p on pm.id_persona = p.id_persona
+    JOIN cita c on pm.id_cita = c.id_cita
+    JOIN medida m on pm.id_medida = m.id_medida
+    JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    JOIN doctor d on c.id_doctor = d.id_doctor
+    JOIN usuario u on d.id_usuario = u.id_usuario
+    JOIN persona p2 on u.id_persona = p2.id_persona
+    WHERE
+    c.id_persona = (SELECT id_persona FROM cita where id_cita=p_id_cita)
+    ORDER BY pm.creado DESC;
 END;
