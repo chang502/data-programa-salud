@@ -2598,123 +2598,7 @@ BEGIN
 END;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-CREATE OR REPLACE PROCEDURE programasalud.assign_discipline (IN p_id_tipo_documento INT, IN p_numero_documento VARCHAR(200), IN p_email VARCHAR(50),
-                                            IN p_peso INT, IN p_estatura DECIMAL(5,2),
-                                            IN p_cualidades_especiales VARCHAR(1), IN p_id_tipo_discapacidad INT,
-                                            IN p_id_disciplina INT,
-                                                    OUT o_result INT, OUT o_mensaje VARCHAR(100))
-BEGIN
-
-    DECLARE v_temp INT;
-    DECLARE EXIT HANDLER FOR 1062
-        BEGIN
-            SET o_result=-1;
-            SET o_mensaje='El registro ya existe';
-            ROLLBACK;
-        END;
-
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-        BEGIN
-            GET DIAGNOSTICS CONDITION 1
-                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
-            ROLLBACK;
-            SET o_result=-1;
-            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
-        END;
-
-    SET o_result = -1;
-
-    START TRANSACTION;
-
-    INSERT INTO estudiante_deportes (semestre, id_tipo_documento,numero_documento,
-                                     email,peso,estatura,cualidades_especiales,
-                                     id_tipo_discapacidad,id_disciplina,activo)
-                                     VALUES (CONCAT(IF(MONTH(NOW())<7,1,2),'S',YEAR(NOW())),
-                                    p_id_tipo_documento,p_numero_documento,p_email, p_peso,
-                                             p_estatura, if(p_cualidades_especiales='1',TRUE,FALSE), p_id_tipo_discapacidad, p_id_disciplina,true);
-
-    SET o_result = LAST_INSERT_ID();
-
-    SET o_mensaje = 'Registro ingresado correctamente';
-
-    COMMIT;
-
-END;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*-------------------------------*/
-
-
-
 
 
 
@@ -2929,11 +2813,11 @@ END;
 
 CREATE OR REPLACE PROCEDURE programasalud.get_active_disciplines ()
 BEGIN
-SELECT d.id_disciplina, d.nombre, count(ed.id_disciplina), d.limite, d.semestre FROM disciplina d
-left join estudiante_deportes ed on d.id_disciplina = ed.id_disciplina
-WHERE d.activo and coalesce(ed.activo,true) and  d.semestre=CONCAT(IF(MONTH(NOW())<7,1,2),'S',YEAR(NOW()))
-group by d.id_disciplina, d.nombre, d.limite, d.semestre having count(ed.id_disciplina)<d.limite
-ORDER BY d.nombre;
+        SELECT d.id_disciplina, d.nombre, count(ed.id_disciplina), d.limite, d.semestre FROM disciplina d
+        left join asignacion_deportes ed on d.id_disciplina = ed.id_disciplina
+        WHERE d.activo and coalesce(ed.activo,true) and  d.semestre=CONCAT(IF(MONTH(NOW())<7,1,2),'S',YEAR(NOW()))
+        group by d.id_disciplina, d.nombre, d.limite, d.semestre having count(ed.id_disciplina)<d.limite
+        ORDER BY d.nombre;
 END;
 
 
@@ -2970,7 +2854,7 @@ END;
 
 CREATE OR REPLACE FUNCTION programasalud.create_or_update_student_from_cc (p_nombre VARCHAR(500), p_apellido VARCHAR(500), p_fecha_nacimiento VARCHAR(10),
                                             p_sexo VARCHAR(50), p_email VARCHAR(50),
-                                            p_cui VARCHAR(13), p_nov VARCHAR(10), p_carnet VARCHAR(9), p_carrera VARCHAR(120))
+                                            p_cui VARCHAR(13), p_nov VARCHAR(10), p_carnet VARCHAR(9), p_carrera VARCHAR(2))
                                             RETURNS INT
 BEGIN
     DECLARE v_temp INT;
@@ -3022,7 +2906,7 @@ END;
 
 CREATE OR REPLACE PROCEDURE programasalud.get_student_from_cc (IN p_nombre VARCHAR(500), IN p_apellido VARCHAR(500), IN p_fecha_nacimiento VARCHAR(10),
                                             IN p_sexo VARCHAR(50), IN p_email VARCHAR(50),
-                                            IN p_cui VARCHAR(13), IN p_nov VARCHAR(10), IN p_carnet VARCHAR(9), IN p_carrera VARCHAR(120))
+                                            IN p_cui VARCHAR(13), IN p_nov VARCHAR(10), IN p_carnet VARCHAR(9), IN p_carrera VARCHAR(2))
 BEGIN
     DECLARE v_temp INT;
 
@@ -4679,3 +4563,103 @@ BEGIN
     c.id_persona = (SELECT id_persona FROM cita where id_cita=p_id_cita)
     ORDER BY pm.creado DESC;
 END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.assign_discipline (IN p_cui NUMERIC(13,0), IN p_nov NUMERIC(10,0), IN p_nombre VARCHAR(500), IN p_apellido VARCHAR(500),
+                                                             IN p_fecha_nacimiento VARCHAR(10), IN p_sexo VARCHAR(1), IN p_email VARCHAR(50), IN p_telefono VARCHAR(8),
+                                                             IN p_telefono_emergencia VARCHAR(8), IN p_contacto_emergencia VARCHAR(150),
+                                                             IN p_carrera VARCHAR(2),
+                                                             IN p_peso INT, IN p_estatura DECIMAL(5,2),
+                                                             IN p_cualidades_especiales VARCHAR(1), IN p_id_tipo_discapacidad INT, IN p_id_disciplina INT,
+                                                             OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE v_flg_existe_persona INT;
+    DECLARE v_temp_id_asign INT;
+    DECLARE v_semestre VARCHAR(6);
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    SET o_result = -1;
+
+    START TRANSACTION;
+
+    SET v_semestre = CONCAT(IF(MONTH(NOW())<7,1,2),'S',YEAR(NOW()));
+
+    SELECT count(1), coalesce(id_persona,-1) INTO v_flg_existe_persona, v_temp
+    FROM persona WHERE
+       (cui=p_cui AND cui IS NOT NULL)
+        OR (nov=p_nov AND nov IS NOT NULL);
+
+    IF v_flg_existe_persona > 0 THEN
+        SELECT count(1) INTO v_temp_id_asign
+        FROM asignacion_deportes
+        WHERE
+        activo
+        AND semestre = v_semestre
+        AND id_persona = v_temp;
+
+        IF v_temp_id_asign>0 THEN
+            SET o_result = -1;
+            SET o_mensaje = 'Ya está asignado';
+        END IF ;
+    END IF;
+
+    SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_cui,p_nov, null, p_carrera);
+
+    IF v_flg_existe_persona= 0 THEN
+        UPDATE persona p SET source = 'DEPORTES' WHERE p.id_persona=v_temp;
+    END IF;
+
+    INSERT INTO estudiante_deportes (semestre, id_tipo_documento,numero_documento,
+                                     email,peso,estatura,cualidades_especiales,
+                                     id_tipo_discapacidad,id_disciplina,activo)
+                                     VALUES (CONCAT(IF(MONTH(NOW())<7,1,2),'S',YEAR(NOW())),
+                                    p_id_tipo_documento,p_numero_documento,p_email, p_peso,
+                                             p_estatura, if(p_cualidades_especiales='1',TRUE,FALSE), p_id_tipo_discapacidad, p_id_disciplina,true);
+
+    SET o_result = LAST_INSERT_ID();
+
+    SET o_mensaje = 'Registro ingresado correctamente';
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
+
+
+
+
+
