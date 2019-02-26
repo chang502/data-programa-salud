@@ -4580,14 +4580,14 @@ END;
 CREATE OR REPLACE PROCEDURE programasalud.assign_discipline (IN p_cui NUMERIC(13,0), IN p_nov NUMERIC(10,0), IN p_nombre VARCHAR(500), IN p_apellido VARCHAR(500),
                                                              IN p_fecha_nacimiento VARCHAR(10), IN p_sexo VARCHAR(1), IN p_email VARCHAR(50), IN p_telefono VARCHAR(8),
                                                              IN p_telefono_emergencia VARCHAR(8), IN p_contacto_emergencia VARCHAR(150),
-                                                             IN p_carrera VARCHAR(2),
-                                                             IN p_peso INT, IN p_estatura DECIMAL(5,2),
-                                                             IN p_cualidades_especiales VARCHAR(1), IN p_id_tipo_discapacidad INT, IN p_id_disciplina INT,
+                                                             IN p_carrera VARCHAR(2), IN p_peso INT, IN p_estatura DECIMAL(5,2),
+                                                             IN p_id_tipo_discapacidad INT, IN p_id_disciplina INT,
                                                              OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
     DECLARE v_temp INT;
     DECLARE v_flg_existe_persona INT;
+    DECLARE v_flg_existe_ficha INT;
     DECLARE v_temp_id_asign INT;
     DECLARE v_semestre VARCHAR(6);
     DECLARE EXIT HANDLER FOR 1062
@@ -4631,18 +4631,39 @@ BEGIN
         END IF ;
     END IF;
 
-    SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_cui,p_nov, null, p_carrera);
 
-    IF v_flg_existe_persona= 0 THEN
-        UPDATE persona p SET source = 'DEPORTES' WHERE p.id_persona=v_temp;
+
+    IF v_temp_id_asign <= 0 THEN
+        SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_cui,p_nov, null, p_carrera);
+
+        IF v_flg_existe_persona= 0 THEN
+            UPDATE persona p SET source = 'DEPORTES' WHERE p.id_persona=v_temp;
+        END IF;
+
+        INSERT INTO programasalud.asignacion_deportes (id_disciplina, id_persona, semestre) VALUES
+        (p_id_disciplina, v_temp, v_semestre);
+        SET o_result = LAST_INSERT_ID();
+
+        SELECT count(1) INTO v_flg_existe_ficha
+        FROM persona_ficha
+        WHERE id_persona = v_temp;
+
+        IF v_flg_existe_ficha > 0 THEN
+            UPDATE persona_ficha
+            SET
+                telefono_emergencia = p_telefono_emergencia,
+                contacto_emergencia = p_contacto_emergencia,
+                id_tipo_discapacidad = p_id_tipo_discapacidad,
+                actualizado = NOW()
+            WHERE id_persona = v_temp;
+        ELSE
+            INSERT INTO persona_ficha (id_tipo_discapacidad, telefono_emergencia, contacto_emergencia)
+            VALUES (p_id_tipo_discapacidad, p_telefono_emergencia, p_contacto_emergencia);
+
+        END IF;
+
+
     END IF;
-
-    INSERT INTO estudiante_deportes (semestre, id_tipo_documento,numero_documento,
-                                     email,peso,estatura,cualidades_especiales,
-                                     id_tipo_discapacidad,id_disciplina,activo)
-                                     VALUES (CONCAT(IF(MONTH(NOW())<7,1,2),'S',YEAR(NOW())),
-                                    p_id_tipo_documento,p_numero_documento,p_email, p_peso,
-                                             p_estatura, if(p_cualidades_especiales='1',TRUE,FALSE), p_id_tipo_discapacidad, p_id_disciplina,true);
 
     SET o_result = LAST_INSERT_ID();
 
