@@ -14,6 +14,32 @@ USE programasalud;
 
 
 
+
+
+
+
+
+
+
+
+
+DROP TABLE IF EXISTS programasalud.carrera;
+
+CREATE TABLE programasalud.carrera
+(
+    carrera           VARCHAR(2) COLLATE utf8_unicode_ci  NOT NULL,
+    nombre            VARCHAR(100) NOT NULL,
+    nombre_corto      VARCHAR(100) NOT NULL,
+    activo            BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(carrera)
+);
+
+
+
+
+
+
+
 DROP TABLE IF EXISTS programasalud.persona;
 
 CREATE TABLE programasalud.persona
@@ -37,6 +63,22 @@ CREATE TABLE programasalud.persona
     activo            BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_persona)
 ) DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
+ALTER TABLE programasalud.persona
+    ADD CONSTRAINT FK_persona_carrera FOREIGN KEY(carrera)
+        REFERENCES programasalud.carrera (carrera);
+
+
+
+
+
+
+
+
+
+
+
 
 DROP TABLE IF EXISTS programasalud.usuario;
 

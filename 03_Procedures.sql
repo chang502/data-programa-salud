@@ -1926,8 +1926,8 @@ END;
 
 
 -- scripts para deportes
-
-
+drop procedure if exists inscripcion_deportes;
+/*
 CREATE OR REPLACE PROCEDURE programasalud.inscripcion_deportes (IN p_id_tipo_documento VARCHAR(255), IN p_descripcion VARCHAR(255), IN p_especialidad VARCHAR(255),
                                                      IN p_estado VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -1967,7 +1967,7 @@ BEGIN
 
 END;
 
-
+*/
 
 
 
@@ -2853,7 +2853,7 @@ END;
 
 
 CREATE OR REPLACE FUNCTION programasalud.create_or_update_student_from_cc (p_nombre VARCHAR(500), p_apellido VARCHAR(500), p_fecha_nacimiento VARCHAR(10),
-                                            p_sexo VARCHAR(50), p_email VARCHAR(50),
+                                            p_sexo VARCHAR(50), p_email VARCHAR(50), p_telefono VARCHAR(8),
                                             p_cui VARCHAR(13), p_nov VARCHAR(10), p_carnet VARCHAR(9), p_carrera VARCHAR(2))
                                             RETURNS INT
 BEGIN
@@ -2872,10 +2872,10 @@ BEGIN
 
     IF v_temp = -1 THEN
         INSERT INTO programasalud.persona (nombre, apellido,
-                                       fecha_nacimiento, sexo, email,
+                                       fecha_nacimiento, sexo, email, telefono,
                                            cui, nov, carnet, carrera, source)
         VALUES ( UPPER(TRIM(p_nombre)), UPPER(TRIM(p_apellido)),
-                 str_to_date(TRIM(p_fecha_nacimiento),'%Y-%m-%d'), UPPER(TRIM(p_sexo)), LOWER(TRIM(p_email)),
+                 str_to_date(TRIM(p_fecha_nacimiento),'%Y-%m-%d'), UPPER(TRIM(p_sexo)), LOWER(TRIM(p_email)), p_telefono,
                 if(p_cui is null or p_cui='',null,p_cui),
                 if(p_nov is null or p_nov='',null,p_nov),
                 if(p_carnet is null or p_carnet='',null,p_carnet), p_carrera, 'CC_STUDENT');
@@ -2890,6 +2890,7 @@ BEGIN
             fecha_nacimiento = str_to_date(TRIM(p_fecha_nacimiento),'%Y-%m-%d'),
             sexo = UPPER(TRIM(p_sexo)),
             email = LOWER(TRIM(p_email)),
+            telefono = f(p_telefono is null or p_telefono='',telefono,p_telefono),
             cui = if(p_cui is null or p_cui='',null,p_cui),
             nov = if(p_nov is null or p_nov='',null,p_nov),
             carnet = if(p_carnet is null or p_carnet='',null,p_carnet),
@@ -2910,7 +2911,7 @@ CREATE OR REPLACE PROCEDURE programasalud.get_student_from_cc (IN p_nombre VARCH
 BEGIN
     DECLARE v_temp INT;
 
-    SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_cui,p_nov, p_carnet, p_carrera);
+    SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,null,p_cui,p_nov, p_carnet, p_carrera);
 
         SELECT p.id_persona, p.nombre, p.telefono, p.apellido, CONCAT(nombre,' ',apellido) nombre_completo,
            DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, p.sexo, p.email,
@@ -4350,7 +4351,7 @@ END;
 
 CREATE OR REPLACE PROCEDURE programasalud.attend_appointment(IN p_id_usuario VARCHAR(50), IN p_id_cita INT)
 BEGIN
-    SELECT c.id_cita, DATE_FORMAT(c.fecha,'%d/%m/%Y') fecha, DATE_FORMAT(c.fecha,'%H:%i') hora, p.id_persona id_paciente, concat(p.nombre,' ',p.apellido) paciente,
+    SELECT c.id_cita, DATE_FORMAT(c.fecha,'%d/%m/%Y') fecha, DATE_FORMAT(c.fecha,'%H:%i') hora, DATE_FORMAT(fc.creado,'%H:%i') hora_inicio, p.id_persona id_paciente, concat(p.nombre,' ',p.apellido) paciente,
            p2.id_persona id_atiende, concat(p2.nombre,' ',p2.apellido) atiende, c2.id_clinica, c2.nombre clinica, c.sintoma, fc.paso
     FROM cita c
     JOIN persona p on c.id_persona = p.id_persona
@@ -4573,7 +4574,13 @@ END;
 
 
 
-
+CREATE OR REPLACE PROCEDURE programasalud.get_carreras_for_select()
+BEGIN
+   SELECT carrera, CONCAT(carrera,' ',nombre_corto) nombre
+    FROM carrera
+    WHERE activo
+    ORDER BY carrera;
+END;
 
 
 
@@ -4607,6 +4614,8 @@ BEGIN
         END;
 
     SET o_result = -1;
+    SET v_temp_id_asign = -1;
+
 
     START TRANSACTION;
 
@@ -4634,7 +4643,7 @@ BEGIN
 
 
     IF v_temp_id_asign <= 0 THEN
-        SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_cui,p_nov, null, p_carrera);
+        SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_telefono,p_cui,p_nov, null, p_carrera);
 
         IF v_flg_existe_persona= 0 THEN
             UPDATE persona p SET source = 'DEPORTES' WHERE p.id_persona=v_temp;
@@ -4657,17 +4666,15 @@ BEGIN
                 actualizado = NOW()
             WHERE id_persona = v_temp;
         ELSE
-            INSERT INTO persona_ficha (id_tipo_discapacidad, telefono_emergencia, contacto_emergencia)
-            VALUES (p_id_tipo_discapacidad, p_telefono_emergencia, p_contacto_emergencia);
+            INSERT INTO persona_ficha (id_persona, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia)
+            VALUES (v_temp, p_id_tipo_discapacidad, p_telefono_emergencia, p_contacto_emergencia);
 
         END IF;
 
+        SET o_mensaje = 'Registro ingresado correctamente';
 
     END IF;
 
-    SET o_result = LAST_INSERT_ID();
-
-    SET o_mensaje = 'Registro ingresado correctamente';
 
     COMMIT;
 

@@ -1,4 +1,22 @@
 
+INSERT INTO carrera (carrera, nombre, nombre_corto) VALUES
+('01','Ingeniería Civil','Ing. Civil'),
+('02','Ingeniería Química','Ing. Química'),
+('03','Ingeniería Mecánica','Ing. Mecánica'),
+('04','Ingeniería Eléctrica','Ing. Eléctrica'),
+('05','Ingeniería Industrial','Ing. Industrial'),
+('06','Ingeniería Mecánica Eléctrica','Ing. Mec. Eléctrica'),
+('07','Ingeniería Mecánica Industrial','Ing. Mec. Industrial'),
+('09','Ingeniería en Ciencias y Sistemas','Ing. Ciencias y Sis.'),
+('10','Licenciatura en Matemática Aplicada','Lic. Mat. Aplicada'),
+('12','Licenciatura en Física Aplicada','Lic. Fís. Aplicada'),
+('13','Ingeniería Electrónica','Ing. Electrónica'),
+('15','Ingeniería en Industrias Agropecuarias y Forestales','Ing. Agroindustrial'),
+('35','Ingeniería Ambiental','Ing. Ambiental');
+
+
+
+
 INSERT INTO programasalud.rol (id_rol, nombre_rol, descripcion_rol, activo) VALUES (8701,'Clínica','Personal de las clínicas',TRUE);
 INSERT INTO programasalud.rol (id_rol, nombre_rol, descripcion_rol, activo) VALUES (8702,'Deportes','Usuarios del departamento de deportes',TRUE);
 INSERT INTO programasalud.rol (id_rol, nombre_rol, descripcion_rol, activo) VALUES (8703,'Programa Salud','Usuarios de la unidad de salud',TRUE);
