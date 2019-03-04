@@ -738,6 +738,7 @@ CREATE TABLE programasalud.persona_medida
     id_cita                 INT NULL,
     valor                   VARCHAR(150) NOT NULL,
     creado                  DATETIME NOT NULL DEFAULT NOW(),
+    actualizado             DATETIME NOT NULL DEFAULT NOW(),
     activo                  BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_persona_medida)
 );
@@ -799,6 +800,7 @@ DROP TABLE IF EXISTS programasalud.persona_ficha;
 CREATE TABLE programasalud.persona_ficha
 (
     id_persona                INT NOT NULL,
+    flag_tiene_discapacidad   BOOLEAN NOT NULL,
     id_tipo_discapacidad      INT NULL,
     telefono_emergencia       VARCHAR(8) NOT NULL,
     contacto_emergencia       VARCHAR(150) NOT NULL,
@@ -816,4 +818,24 @@ ALTER TABLE programasalud.persona_ficha
         REFERENCES programasalud.tipo_discapacidad (id_tipo_discapacidad);
 
 
+
+
+
+
+
+DROP TABLE IF EXISTS programasalud.cita_accion;
+
+CREATE TABLE programasalud.cita_accion
+(
+    id_cita_accion              INT AUTO_INCREMENT NOT NULL,
+    id_cita                     INT NOT NULL,
+    id_accion                   INT NOT NULL,
+    observaciones               VARCHAR(500) NOT NULL,
+    activo                      BOOLEAN NOT NULL DEFAULT TRUE,
+    creado                      DATETIME NOT NULL DEFAULT NOW(),
+    actualizado                 DATETIME NOT NULL DEFAULT NOW(),
+    PRIMARY KEY(id_cita_accion),
+    CONSTRAINT FK_cita_accion_cita FOREIGN KEY(id_cita) REFERENCES programasalud.cita(id_cita),
+    CONSTRAINT FK_cita_accion_accion FOREIGN KEY(id_accion) REFERENCES programasalud.accion(id_accion)
+);
 

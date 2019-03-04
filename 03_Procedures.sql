@@ -2890,7 +2890,7 @@ BEGIN
             fecha_nacimiento = str_to_date(TRIM(p_fecha_nacimiento),'%Y-%m-%d'),
             sexo = UPPER(TRIM(p_sexo)),
             email = LOWER(TRIM(p_email)),
-            telefono = f(p_telefono is null or p_telefono='',telefono,p_telefono),
+            telefono = if(p_telefono is null or p_telefono='',telefono,p_telefono),
             cui = if(p_cui is null or p_cui='',null,p_cui),
             nov = if(p_nov is null or p_nov='',null,p_nov),
             carnet = if(p_carnet is null or p_carnet='',null,p_carnet),
@@ -4018,7 +4018,7 @@ BEGIN
     JOIN clinica c2 on c.id_clinica = c2.id_clinica
     JOIN flujo_cita fc on c.id_cita = fc.id_cita AND fc.activo
     WHERE c.activo
-    AND date(c.fecha) = date(now())
+    AND date(c.fecha) <= date(now())
     AND fc.paso NOT IN ('FINALIZADO','CANCELADO')
     AND u.id_usuario=p_id_usuario
     ORDER BY c.fecha;
@@ -4266,12 +4266,12 @@ BEGIN
 
     SELECT m.id_medida, m.nombre fieldLabel, tdm.tipo_dato, coalesce(m.unidad_medida,'') unidad_medida,
         m.valor_minimo, m.valor_maximo, if(m.obligatorio=1,'true','false') obligatorio from clinica_medida cm
-    JOIN clinica c on cm.id_clinica = c.id_clinica
-    JOIN medida m on cm.id_medida = m.id_medida
+    JOIN clinica c on cm.id_clinica = c.id_clinica AND c.activo
+    JOIN medida m on cm.id_medida = m.id_medida AND m.activo
     JOIN tipo_dato_medida tdm on m.id_tipo_dato = tdm.id_tipo_dato
     JOIN cita c2 on c.id_clinica = c2.id_clinica AND c2.activo AND c2.id_cita=p_id_cita
-    JOIN doctor d on c2.id_doctor = d.id_doctor
-    JOIN usuario u on d.id_usuario = u.id_usuario AND u.id_usuario=p_id_usuario
+    JOIN doctor d on c2.id_doctor = d.id_doctor AND d.activo
+    JOIN usuario u on d.id_usuario = u.id_usuario AND u.id_usuario=p_id_usuario AND u.activo
     WHERE cm.activo;
 
 END;
@@ -4352,7 +4352,7 @@ END;
 CREATE OR REPLACE PROCEDURE programasalud.attend_appointment(IN p_id_usuario VARCHAR(50), IN p_id_cita INT)
 BEGIN
     SELECT c.id_cita, DATE_FORMAT(c.fecha,'%d/%m/%Y') fecha, DATE_FORMAT(c.fecha,'%H:%i') hora, DATE_FORMAT(fc.creado,'%H:%i') hora_inicio, p.id_persona id_paciente, concat(p.nombre,' ',p.apellido) paciente,
-           p2.id_persona id_atiende, concat(p2.nombre,' ',p2.apellido) atiende, c2.id_clinica, c2.nombre clinica, c.sintoma, fc.paso
+           p2.id_persona id_atiende, concat(p2.nombre,' ',p2.apellido) atiende, c2.id_clinica, c2.nombre clinica, c.sintoma, fc.paso, pf.telefono_emergencia, pf.contacto_emergencia, pf.flag_tiene_discapacidad
     FROM cita c
     JOIN persona p on c.id_persona = p.id_persona
     JOIN doctor d on c.id_doctor = d.id_doctor
@@ -4360,8 +4360,9 @@ BEGIN
     JOIN persona p2 on u.id_persona = p2.id_persona
     JOIN clinica c2 on c.id_clinica = c2.id_clinica
     JOIN flujo_cita fc on c.id_cita = fc.id_cita AND fc.activo
+    LEFT JOIN persona_ficha pf on p.id_persona = pf.id_persona
     WHERE c.activo
-    AND date(c.fecha) = date(now())
+    AND date(c.fecha) <= date(now())
     AND fc.paso = 'ATENDIENDO'
     AND u.id_usuario=p_id_usuario
     AND c.id_cita = p_id_cita
@@ -4550,7 +4551,7 @@ END;
 CREATE OR REPLACE PROCEDURE programasalud.get_measurement_history(IN p_id_cita INT)
 BEGIN
     SELECT pm.id_persona_medida, date_format(pm.creado,'%d/%m/%Y') fecha,
-           date_format(pm.creado,'%h:%i') hora, c2.nombre clinica,
+           date_format(pm.creado,'%H:%i') hora, c2.nombre clinica,
            CONCAT(p2.nombre,' ',p2.apellido) atiende, m.nombre medida,
            pm.valor, m.unidad_medida unidad FROM persona_medida pm
     JOIN persona p on pm.id_persona = p.id_persona
@@ -4562,6 +4563,7 @@ BEGIN
     JOIN persona p2 on u.id_persona = p2.id_persona
     WHERE
     c.id_persona = (SELECT id_persona FROM cita where id_cita=p_id_cita)
+    AND pm.activo
     ORDER BY pm.creado DESC;
 END;
 
@@ -4588,8 +4590,8 @@ CREATE OR REPLACE PROCEDURE programasalud.assign_discipline (IN p_cui NUMERIC(13
                                                              IN p_fecha_nacimiento VARCHAR(10), IN p_sexo VARCHAR(1), IN p_email VARCHAR(50), IN p_telefono VARCHAR(8),
                                                              IN p_telefono_emergencia VARCHAR(8), IN p_contacto_emergencia VARCHAR(150),
                                                              IN p_carrera VARCHAR(2), IN p_peso INT, IN p_estatura DECIMAL(5,2),
-                                                             IN p_id_tipo_discapacidad INT, IN p_id_disciplina INT,
-                                                             OUT o_result INT, OUT o_mensaje VARCHAR(100))
+                                                             IN p_flag_tiene_discapacidad VARCHAR(1), IN p_id_tipo_discapacidad INT, IN p_id_disciplina INT,
+                                                             OUT o_result INT, OUT o_mensaje VARCHAR(500))
 BEGIN
 
     DECLARE v_temp INT;
@@ -4640,7 +4642,7 @@ BEGIN
         END IF ;
     END IF;
 
-
+    SET o_result = -2;
 
     IF v_temp_id_asign <= 0 THEN
         SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_telefono,p_cui,p_nov, null, p_carrera);
@@ -4649,6 +4651,8 @@ BEGIN
             UPDATE persona p SET source = 'DEPORTES' WHERE p.id_persona=v_temp;
         END IF;
 
+        SET o_result = -3;
+
         INSERT INTO programasalud.asignacion_deportes (id_disciplina, id_persona, semestre) VALUES
         (p_id_disciplina, v_temp, v_semestre);
         SET o_result = LAST_INSERT_ID();
@@ -4656,18 +4660,19 @@ BEGIN
         SELECT count(1) INTO v_flg_existe_ficha
         FROM persona_ficha
         WHERE id_persona = v_temp;
-
+        SET o_result = -4;
         IF v_flg_existe_ficha > 0 THEN
             UPDATE persona_ficha
             SET
                 telefono_emergencia = p_telefono_emergencia,
                 contacto_emergencia = p_contacto_emergencia,
-                id_tipo_discapacidad = p_id_tipo_discapacidad,
+                flag_tiene_discapacidad = (p_flag_tiene_discapacidad = '1'),
+                id_tipo_discapacidad = if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ),
                 actualizado = NOW()
             WHERE id_persona = v_temp;
         ELSE
-            INSERT INTO persona_ficha (id_persona, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia)
-            VALUES (v_temp, p_id_tipo_discapacidad, p_telefono_emergencia, p_contacto_emergencia);
+            INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia)
+            VALUES (v_temp,(p_flag_tiene_discapacidad = '1'), if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia);
 
         END IF;
 
@@ -4688,6 +4693,377 @@ END;
 
 
 
+CREATE OR REPLACE PROCEDURE programasalud.get_persona_ficha(IN p_id_persona INT)
+BEGIN
+    SELECT id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia
+    FROM persona_ficha
+    WHERE id_persona = p_id_persona;
+END;
 
 
 
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.save_persona_ficha(IN p_id_persona INT, IN p_flag_tiene_discapacidad VARCHAR(1),
+                                                             IN p_telefono_emergencia VARCHAR(8), IN p_contacto_emergencia VARCHAR(150),
+                                                             IN p_id_tipo_discapacidad INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE v_paso ENUM('CREADO', 'ATENDIENDO', 'EDITADO', 'FINALIZADO', 'CANCELADO');
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    START TRANSACTION;
+
+
+    SET v_temp = -1;
+    SET o_result = -1;
+
+    select COUNT(1) INTO v_temp
+    FROM persona_ficha
+    WHERE id_persona = p_id_persona;
+
+
+    if v_temp>0 THEN
+
+        UPDATE persona_ficha
+        SET
+            actualizado = now(),
+            flag_tiene_discapacidad = (p_flag_tiene_discapacidad = '1'),
+            id_tipo_discapacidad = IF(p_flag_tiene_discapacidad = '1', p_id_tipo_discapacidad, NULL),
+            telefono_emergencia = p_telefono_emergencia,
+            contacto_emergencia = p_contacto_emergencia
+        WHERE
+            id_persona = p_id_persona;
+
+        SET o_result = p_id_persona;
+        SET o_mensaje = 'Registro actualizado correctamente';
+    ELSE
+
+        INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia)
+        VALUES (p_id_persona, (p_flag_tiene_discapacidad = '1'),IF(p_flag_tiene_discapacidad = '1', p_id_tipo_discapacidad, NULL),
+                p_telefono_emergencia, p_contacto_emergencia);
+        SET o_result = p_id_persona;
+        SET o_mensaje = 'Registro actualizado correctamente';
+    END IF;
+
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.create_cita_accion(IN p_id_cita INT, IN p_id_accion INT,
+                                                             IN p_observaciones VARCHAR(500),
+                                                             OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    START TRANSACTION;
+
+
+    SET v_temp = -1;
+    SET o_result = -1;
+
+    INSERT INTO cita_accion (id_cita, id_accion, observaciones) VALUES (p_id_cita, p_id_accion, p_observaciones);
+    SET o_result = LAST_INSERT_ID();
+    SET o_mensaje = 'Registro actualizado correctamente';
+
+    COMMIT;
+
+END;
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_cita_acciones(IN p_id_cita INT)
+BEGIN
+    SELECT ca.id_cita_accion, date_format(ca.creado,'%d/%m/%Y') fecha,
+           date_format(ca.creado,'%H:%i') hora, c2.nombre clinica,
+           CONCAT(p2.nombre,' ',p2.apellido) atiende, a.nombre accion, ca.observaciones
+    FROM cita_accion ca
+    JOIN cita c on ca.id_cita = c.id_cita
+    JOIN accion a on ca.id_accion = a.id_accion
+    JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    JOIN doctor d on c.id_doctor = d.id_doctor
+    JOIN usuario u on d.id_usuario = u.id_usuario
+    JOIN persona p2 on u.id_persona = p2.id_persona
+    WHERE ca.activo and c.id_persona = (
+        SELECT c.id_persona FROM cita c
+        WHERE id_cita = p_id_cita )
+    ORDER BY ca.creado DESC;
+END;
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_cita_accion(IN p_id_cita_accion INT, IN p_id_cita INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    START TRANSACTION;
+
+    SELECT COUNT(*) INTO o_result
+    FROM cita_accion u
+    WHERE u.id_cita_accion=p_id_cita_accion
+    AND u.id_cita=p_id_cita;
+
+
+    IF o_result>0 THEN
+        UPDATE
+            cita_accion u
+        SET
+            u.activo=false,
+            u.actualizado = now()
+        WHERE
+            u.id_cita_accion = p_id_cita_accion
+            AND u.id_cita=p_id_cita;
+        SET o_mensaje = 'Registro actualizado correctamente';
+    ELSE
+        SET o_mensaje = 'Esta acción no fue registrada en esta cita';
+    END IF;
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_persona_medida(IN p_id_persona_medida INT, IN p_id_cita INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    START TRANSACTION;
+
+    SELECT COUNT(*) INTO o_result
+    FROM persona_medida pm
+    WHERE pm.id_persona_medida = p_id_persona_medida
+    AND pm.id_cita = p_id_cita;
+
+
+    IF o_result>0 THEN
+        UPDATE
+            persona_medida pm
+        SET
+            pm.activo=false,
+            pm.actualizado = now()
+        WHERE
+            pm.id_persona_medida = p_id_persona_medida
+            AND pm.id_cita = p_id_cita;
+        SET o_mensaje = 'Registro actualizado correctamente';
+    ELSE
+        SET o_mensaje = 'Esta medida no fue registrada en esta cita';
+    END IF;
+
+    COMMIT;
+
+END;
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.finish_appointment(IN p_id_cita INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE v_estado INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    START TRANSACTION;
+
+    SET v_temp = -1;
+    SET v_estado = -1;
+    SET o_result = -1;
+
+    SELECT COUNT(1) INTO v_estado FROM cita c
+    JOIN flujo_cita fc2 on c.id_cita = fc2.id_cita AND fc2.paso = 'ATENDIENDO' AND fc2.activo
+    WHERE c.activo AND c.id_cita=p_id_cita;
+
+
+    if v_estado>0 THEN
+
+        SELECT sum(medidas) + sum(acciones) INTO v_temp FROM (
+        SELECT count(1) medidas, 0 acciones FROM persona_medida pm WHERE id_cita=p_id_cita
+        UNION
+        SELECT 0, count(1) FROM cita_accion ca WHERE ca.activo AND id_cita =p_id_cita) totales;
+
+
+        IF v_temp > 0 THEN
+            SELECT id_flujo_cita INTO o_result
+            FROM flujo_cita
+            WHERE id_cita = p_id_cita
+            AND activo;
+
+            UPDATE flujo_cita f
+            SET activo = 0,
+            actualizado = now()
+            WHERE f.id_flujo_cita = o_result
+            AND activo=1;
+
+            INSERT INTO flujo_cita (id_cita, paso, flujo_cita_padre)
+            VALUES (p_id_cita,'FINALIZADO',o_result);
+
+            UPDATE cita c SET activo = FALSE WHERE id_cita = p_id_cita;
+
+            SET o_result = p_id_cita;
+            SET o_mensaje = 'Cita finalizada correctamente';
+        ELSE
+            SET o_result = -1;
+            SET o_mensaje = 'Debe tomar medidas o registrar una acción para poder finalizar la cita';
+        END IF;
+    ELSE
+        SET o_mensaje = 'La cita ya fue cancelada o finalizada';
+    END IF;
+
+
+    COMMIT;
+
+END;
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.cancel_appointment(IN p_id_cita INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE v_estado INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    START TRANSACTION;
+
+    SET v_temp = -1;
+    SET v_estado = -1;
+    SET o_result = -1;
+
+    SELECT COUNT(1) INTO v_estado FROM cita c
+    JOIN flujo_cita fc2 on c.id_cita = fc2.id_cita AND fc2.paso = 'ATENDIENDO' AND fc2.activo
+    WHERE c.activo AND c.id_cita=p_id_cita;
+
+
+    if v_estado>0 THEN
+
+
+        SELECT id_flujo_cita INTO o_result
+        FROM flujo_cita
+        WHERE id_cita = p_id_cita
+        AND activo;
+
+        UPDATE flujo_cita f
+        SET activo = 0,
+        actualizado = now()
+        WHERE f.id_flujo_cita = o_result
+        AND activo=1;
+
+        INSERT INTO flujo_cita (id_cita, paso, flujo_cita_padre)
+        VALUES (p_id_cita,'CANCELADO',o_result);
+
+        UPDATE cita c SET activo = FALSE WHERE id_cita = p_id_cita;
+
+        SET o_result = p_id_cita;
+        SET o_mensaje = 'Cita cancelada correctamente';
+
+    ELSE
+        SET o_mensaje = 'La cita ya fue cancelada o finalizada';
+    END IF;
+
+
+    COMMIT;
+
+END;
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_appointment_history(IN p_id_cita INT)
+BEGIN
+
+    SELECT date_format(c.fecha,'%d/%m/%Y %H:%i') programada,
+           (SELECT date_format(fc2.creado ,'%d/%m/%Y %H:%i') FROM flujo_cita fc2 WHERE fc2.id_cita=fc.id_cita AND fc2.paso='ATENDIENDO' AND fc2.id_flujo_cita=fc.flujo_cita_padre) inicio,
+           date_format(fc.creado ,'%d/%m/%Y %H:%i') fin,
+           c2.nombre clinica,
+           CONCAT(p2.nombre,' ',p2.apellido) atiende, c.sintoma
+    FROM flujo_cita fc
+    JOIN cita c on c.id_cita = fc.id_cita AND fc.paso = 'FINALIZADO'
+    JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    JOIN doctor d on c.id_doctor = d.id_doctor
+    JOIN usuario u on d.id_usuario = u.id_usuario
+    JOIN persona p2 on u.id_persona = p2.id_persona
+    WHERE c.id_persona = (
+        SELECT c.id_persona FROM cita c
+        WHERE id_cita = p_id_cita )
+    ORDER BY c.fecha DESC;
+
+END;
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_appointment_info_for_email(IN p_id_cita INT)
+BEGIN
+   select concat(p.nombre,' ',p.apellido) paciente, c.email,date_format(c.fecha,'%d/%m/%Y') fecha,
+       date_format(c.fecha,'%H:%i') hora, concat(p2.nombre,' ',p2.apellido) atiende, c2.nombre clinica, c2.ubicacion from cita c
+join persona p on c.id_persona = p.id_persona
+join clinica c2 on c.id_clinica = c2.id_clinica
+join doctor d on c.id_doctor = d.id_doctor
+join usuario u on d.id_usuario = u.id_usuario
+join persona p2 on u.id_persona = p2.id_persona
+WHERE c.id_cita = p_id_cita;
+
+END;
