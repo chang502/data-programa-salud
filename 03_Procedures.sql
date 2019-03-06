@@ -2913,9 +2913,10 @@ BEGIN
 
     SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,null,p_cui,p_nov, p_carnet, p_carrera);
 
-        SELECT p.id_persona, p.nombre, p.telefono, p.apellido, CONCAT(nombre,' ',apellido) nombre_completo,
-           DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, p.sexo, p.email,
-           p.cui, p.nov, p.carnet, p.carrera carrera_depto
+        SELECT p.id_persona, /*p.nombre, p.telefono, p.apellido, */CONCAT(nombre,' ',apellido) nombre_completo,
+           DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, /*p.sexo, */
+               p.email/*,
+           p.cui, p.nov, p.carnet, p.carrera carrera_depto*/
     FROM programasalud.persona p
     where p.id_persona=v_temp;
 
@@ -2926,9 +2927,9 @@ END;
 CREATE OR REPLACE PROCEDURE programasalud.search_person_by_carnet (IN p_carnet VARCHAR(13))
 BEGIN
 
-    SELECT p.id_persona, p.nombre, p.telefono, p.apellido, CONCAT(nombre,' ',apellido) nombre_completo,
-           DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, p.sexo, p.email,
-           p.cui, p.nov, p.carnet
+    SELECT p.id_persona,/* p.nombre, p.telefono, p.apellido,*/ CONCAT(nombre,' ',apellido) nombre_completo,
+           DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento,/* p.sexo,*/ p.email/*,
+           p.cui, p.nov, p.carnet*/
     FROM programasalud.persona p
     where p.carnet = p_carnet AND p.carnet is not null;
 
@@ -2939,9 +2940,9 @@ END;
 CREATE OR REPLACE PROCEDURE programasalud.search_person_by_cui (IN p_cui VARCHAR(13))
 BEGIN
 
-    SELECT p.id_persona, p.nombre, p.telefono, p.apellido, CONCAT(nombre,' ',apellido) nombre_completo,
-           DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, p.sexo, p.email,
-           p.cui, p.nov, p.carnet
+    SELECT p.id_persona, /*p.nombre, p.telefono, p.apellido, */CONCAT(nombre,' ',apellido) nombre_completo,
+           DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento,/* p.sexo,*/ p.email/*,
+           p.cui, p.nov, p.carnet*/
     FROM programasalud.persona p
     where p.cui = p_cui AND p.cui is not null;
 
@@ -2955,16 +2956,21 @@ END;
 CREATE OR REPLACE PROCEDURE programasalud.search_person_by_any_id (IN p_id VARCHAR(13))
 BEGIN
 
-    SELECT p.id_persona, p.nombre, p.telefono, p.apellido, CONCAT(nombre,' ',apellido) nombre_completo,
-           DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, p.sexo, p.email,
-           p.cui, p.nov, p.carnet, p.regpersonal
+    SELECT p.id_persona, /*p.nombre, p.telefono, p.apellido,*/
+           CONCAT(nombre,' ',apellido) nombre_completo,
+           DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, /*p.sexo,*/
+           p.email
+           /*,
+           p.cui, p.nov, p.carnet, p.regpersonal*/
     FROM programasalud.persona p
-    where (p.cui like concat('%',p_id,'%') AND p.cui is not null AND p_id!='')
+    where p.id_persona!=1 AND ((p.cui like concat('%',p_id,'%') AND p.cui is not null AND p_id!='')
     OR (p.carnet like concat('%',p_id,'%') AND p.carnet is not null AND p_id!='')
     OR (p.nov like concat('%',p_id,'%') AND p.nov is not null AND p_id!='')
     OR (p.regpersonal like concat('%',p_id,'%') AND p.regpersonal is not null AND p_id!='')
-    OR (UPPER(CONCAT(p.nombre,' ',p.apellido)) LIKE CONCAT('%',REPLACE(UPPER(p_id COLLATE utf8_unicode_ci), ' ', '%'),'%'))
-        limit 30;
+    OR (UPPER(CONCAT(p.nombre,' ',p.apellido)) LIKE CONCAT('%',REPLACE(UPPER(p_id COLLATE utf8_unicode_ci), ' ', '%'),'%')) )
+    ORDER BY nombre
+        limit 50;
+
 
 
 END;
@@ -4569,6 +4575,27 @@ END;
 
 
 
+CREATE OR REPLACE PROCEDURE programasalud.get_measurement_history_persona(IN p_id_persona INT)
+BEGIN
+    SELECT pm.id_persona_medida, date_format(pm.creado,'%d/%m/%Y') fecha,
+           date_format(pm.creado,'%H:%i') hora, c2.nombre clinica,
+           CONCAT(p2.nombre,' ',p2.apellido) atiende, m.nombre medida,
+           pm.valor, m.unidad_medida unidad FROM persona_medida pm
+    JOIN persona p on pm.id_persona = p.id_persona
+    JOIN cita c on pm.id_cita = c.id_cita
+    JOIN medida m on pm.id_medida = m.id_medida
+    JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    JOIN doctor d on c.id_doctor = d.id_doctor
+    JOIN usuario u on d.id_usuario = u.id_usuario
+    JOIN persona p2 on u.id_persona = p2.id_persona
+    WHERE
+    c.id_persona = p_id_persona
+    AND pm.activo
+    ORDER BY pm.creado DESC;
+END;
+
+
+
 
 
 
@@ -4820,6 +4847,23 @@ BEGIN
 END;
 
 
+CREATE OR REPLACE PROCEDURE programasalud.get_cita_acciones_persona(IN p_id_persona INT)
+BEGIN
+    SELECT ca.id_cita_accion, date_format(ca.creado,'%d/%m/%Y') fecha,
+           date_format(ca.creado,'%H:%i') hora, c2.nombre clinica,
+           CONCAT(p2.nombre,' ',p2.apellido) atiende, a.nombre accion, ca.observaciones
+    FROM cita_accion ca
+    JOIN cita c on ca.id_cita = c.id_cita
+    JOIN accion a on ca.id_accion = a.id_accion
+    JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    JOIN doctor d on c.id_doctor = d.id_doctor
+    JOIN usuario u on d.id_usuario = u.id_usuario
+    JOIN persona p2 on u.id_persona = p2.id_persona
+    WHERE ca.activo and c.id_persona = p_id_persona
+    ORDER BY ca.creado DESC;
+END;
+
+
 
 
 
@@ -5055,6 +5099,28 @@ BEGIN
 END;
 
 
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_appointment_history_persona(IN p_id_persona INT)
+BEGIN
+
+    SELECT date_format(c.fecha,'%d/%m/%Y %H:%i') programada,
+           (SELECT date_format(fc2.creado ,'%d/%m/%Y %H:%i') FROM flujo_cita fc2 WHERE fc2.id_cita=fc.id_cita AND fc2.paso='ATENDIENDO' AND fc2.id_flujo_cita=fc.flujo_cita_padre) inicio,
+           date_format(fc.creado ,'%d/%m/%Y %H:%i') fin,
+           c2.nombre clinica,
+           CONCAT(p2.nombre,' ',p2.apellido) atiende, c.sintoma
+    FROM flujo_cita fc
+    JOIN cita c on c.id_cita = fc.id_cita AND fc.paso = 'FINALIZADO'
+    JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    JOIN doctor d on c.id_doctor = d.id_doctor
+    JOIN usuario u on d.id_usuario = u.id_usuario
+    JOIN persona p2 on u.id_persona = p2.id_persona
+    WHERE c.id_persona = p_id_persona
+    ORDER BY c.fecha DESC;
+
+END;
+
+
 CREATE OR REPLACE PROCEDURE programasalud.get_appointment_info_for_email(IN p_id_cita INT)
 BEGIN
    select concat(p.nombre,' ',p.apellido) paciente, c.email,date_format(c.fecha,'%d/%m/%Y') fecha,
@@ -5065,5 +5131,93 @@ join doctor d on c.id_doctor = d.id_doctor
 join usuario u on d.id_usuario = u.id_usuario
 join persona p2 on u.id_persona = p2.id_persona
 WHERE c.id_cita = p_id_cita;
+
+END;
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_patient(IN p_id_persona INT)
+BEGIN
+    SELECT p.id_persona, p.nombre, p.apellido, concat(p.nombre,' ',p.apellido) nombre_completo,
+           DATE_FORMAT(p.fecha_nacimiento ,'%d/%m/%Y') fecha_nacimiento, p.sexo, p.email, COALESCE(p.telefono,'') telefono,
+           COALESCE(p.cui,'') cui, COALESCE(p.carnet,'') carnet, COALESCE(p.nov,'') nov, COALESCE(p.regpersonal,'') regpersonal,
+           p.source, if(p.source='CREATED','Creado manualmente',if(p.source='CC_STUDENT','Estudiante migrado',if(p.source='CC_EMPLOYEE','Empleado migrado',if(p.source='DEPORTES','Creado en el formulario de deportes','')))) origen,
+           p.carrera, p.departamento
+    FROM persona p
+    WHERE p.id_persona !=1
+    AND p.id_persona=p_id_persona;
+END;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.update_person_info (IN p_id_persona INT, IN p_nombre VARCHAR(500), IN p_apellido VARCHAR(500), IN p_fecha_nacimiento VARCHAR(10),
+                                            IN p_sexo VARCHAR(1), IN p_email VARCHAR(50), IN p_telefono VARCHAR(8),
+                                            IN p_cui VARCHAR(13), IN p_nov VARCHAR(10), IN p_regpersonal VARCHAR(9), IN p_carnet VARCHAR(9),
+                                            OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE v_estado INT;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+
+    START TRANSACTION;
+
+    /* check for already created persons, search by id */
+        select count(1) into v_temp
+        from persona
+        where id_persona != p_id_persona AND ((cui=p_cui and cui is not null and p_cui!='')
+        or (nov=p_nov and nov is not null and p_nov!='')
+        or (regpersonal=p_regpersonal and regpersonal is not null and p_regpersonal!='')
+        or (carnet = p_carnet and carnet is not null and p_carnet!=''));
+
+    IF v_temp = 0 THEN
+
+        UPDATE persona
+        SET
+            nombre= UPPER(TRIM(p_nombre)),
+            apellido = (UPPER(TRIM(p_apellido))),
+            fecha_nacimiento = str_to_date(p_fecha_nacimiento,'%d/%m/%Y'),
+            sexo = UPPER(p_sexo),
+            email = LOWER(TRIM(p_email)),
+            telefono = TRIM(p_telefono),
+            cui = if(p_cui is null or p_cui='',null,p_cui),
+            nov=if(p_nov is null or p_nov='',null,p_nov),
+            regpersonal=if(p_regpersonal is null or p_regpersonal='',null,p_regpersonal),
+            carnet=if(p_carnet is null or p_carnet='',null,p_carnet),
+            updated = now()
+        WHERE
+              id_persona = p_id_persona;
+
+        SET o_result = 1;
+        SET o_mensaje = 'Registro actualizado correctamente';
+
+
+    ELSE
+        SET o_mensaje = 'Ya existe una persona con esa identificación';
+    END IF;
+
+    COMMIT;
 
 END;
