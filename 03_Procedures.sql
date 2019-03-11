@@ -72,9 +72,7 @@ BEGIN
     COMMIT;
 END;
 
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.get_users()
 BEGIN
@@ -92,9 +90,7 @@ BEGIN
         and u.id_usuario!='ps_admin';
 END;
 
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.get_user(IN p_id_usuario VARCHAR(50))
 BEGIN
@@ -113,16 +109,7 @@ BEGIN
         AND u.id_usuario=p_id_usuario;
 END;
 
-
-
-
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.update_user(IN p_id_usuario VARCHAR(50), IN p_clave VARCHAR(64), IN p_id_persona INT, IN p_cambiar_clave VARCHAR(1), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -184,14 +171,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.get_user_roles(IN p_id_usuario VARCHAR(50))
 BEGIN
@@ -204,14 +184,7 @@ BEGIN
     ;
 END;
 
-
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.update_user_role(IN p_id_usuario_rol VARCHAR(50), IN p_activo VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -246,19 +219,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.delete_user(IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -294,14 +255,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.create_doctor (IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -378,11 +332,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.get_doctores()
 BEGIN
@@ -400,10 +350,7 @@ BEGIN
 
 END;
 
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.get_doctor(IN p_id_doctor INT(20))
 BEGIN
@@ -418,9 +365,7 @@ BEGIN
 
 END;
 
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.update_doctor ( IN p_id_doctor INT, IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -477,13 +422,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.delete_doctor(IN p_id_doctor INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -519,9 +458,7 @@ BEGIN
 
 END;
 
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.get_doctores_especialidades(IN p_id_doctor VARCHAR(50))
 BEGIN
@@ -535,12 +472,7 @@ BEGIN
       AND de.id_doctor=p_id_doctor;
 END;
 
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.update_doctor_especialidad(IN p_id_doctor_especialidad VARCHAR(50), IN p_activo VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -575,21 +507,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.get_tipos_medida()
 BEGIN
@@ -601,11 +519,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.create_measurement (IN p_nombre VARCHAR(50), IN p_id_tipo_dato INT(20), IN p_unidad_medida VARCHAR(50), IN p_valor_minimo VARCHAR(50),
                                                    IN p_valor_maximo VARCHAR(50), IN p_obligatorio VARCHAR(1), OUT o_result INT, OUT o_mensaje VARCHAR(100))
@@ -632,24 +546,17 @@ BEGIN
 
     START TRANSACTION;
 
-
-
-
-
     INSERT INTO programasalud.medida (nombre,
                                       id_tipo_dato, unidad_medida, valor_minimo,
                                       valor_maximo, obligatorio, activo)
     VALUES ( initcap(p_nombre), p_id_tipo_dato,
-             initcap(p_unidad_medida), p_valor_minimo, p_valor_maximo, (p_obligatorio = "1"), TRUE);
+             initcap(p_unidad_medida), p_valor_minimo, p_valor_maximo, (p_obligatorio = '1'), TRUE);
 
     SET o_result = LAST_INSERT_ID();
-
-
 
     INSERT INTO programasalud.clinica_medida (id_clinica, id_medida, activo)
     SELECT id_clinica, o_result, FALSE
     FROM clinica;
-
 
 
     SET o_mensaje = 'Registro ingresado correctamente';
@@ -658,11 +565,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.get_measurements()
 BEGIN
@@ -679,10 +582,7 @@ BEGIN
 
 END;
 
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.get_measurement(IN p_id_medida INT)
 BEGIN
@@ -700,13 +600,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.update_measurement ( IN p_id_medida INT(20), IN p_nombre VARCHAR(50), IN p_id_tipo_dato INT(20), IN p_unidad_medida VARCHAR(50), IN p_valor_minimo VARCHAR(50),
                                                     IN p_valor_maximo VARCHAR(50), IN p_obligatorio VARCHAR(1), OUT o_result INT, OUT o_mensaje VARCHAR(100))
@@ -749,7 +643,7 @@ BEGIN
             m.unidad_medida=p_unidad_medida,
             m.valor_minimo=p_valor_minimo,
             m.valor_maximo=p_valor_maximo,
-            m.obligatorio=(p_obligatorio = "1")
+            m.obligatorio=(p_obligatorio = '1')
         WHERE
                 m.id_medida=p_id_medida;
 
@@ -764,13 +658,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.delete_measurement(IN p_id_medida INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -806,31 +694,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.create_clinic (IN p_nombre VARCHAR(50), IN p_ubicacion VARCHAR(50), IN p_descripcion VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -881,11 +745,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.get_clinics()
 BEGIN
@@ -900,10 +760,7 @@ BEGIN
 
 END;
 
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.get_clinic(IN p_id_clinica INT)
 BEGIN
@@ -919,13 +776,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.update_clinic (IN p_id_clinica INT, IN p_nombre VARCHAR(50), IN p_ubicacion VARCHAR(50), IN p_descripcion VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -980,13 +831,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.delete_clinic(IN p_id_clinica INT(20), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -1022,12 +867,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.get_clinica_doctores(IN p_id_clinica VARCHAR(50))
 BEGIN
@@ -1042,11 +882,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.update_clinica_doctor(IN p_id_clinica_doctor VARCHAR(50), IN p_activo VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -1081,16 +917,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.get_clinica_medidas(IN p_id_clinica VARCHAR(50))
 BEGIN
@@ -1103,15 +930,7 @@ BEGIN
 
 END;
 
-
-
-
-
-
-
-
-
-
+-- ---------------------------------------------------------------------------------------------------------------------
 
 CREATE OR REPLACE PROCEDURE programasalud.update_clinica_medida(IN p_id_clinica_medida VARCHAR(50), IN p_activo VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -2836,6 +2655,7 @@ BEGIN
            COALESCE((SELECT TRUE FROM usuario_rol ur1 WHERE ur1.id_usuario=u.id_usuario AND ur1.activo AND ur1.id_rol=8701),FALSE) hasClinica,
            COALESCE((SELECT TRUE FROM usuario_rol ur1 WHERE ur1.id_usuario=u.id_usuario AND ur1.activo AND ur1.id_rol=8702),FALSE) hasDeportes,
            COALESCE((SELECT TRUE FROM usuario_rol ur1 WHERE ur1.id_usuario=u.id_usuario AND ur1.activo AND ur1.id_rol=8703),FALSE) hasProgramaSalud,
+           COALESCE((SELECT TRUE FROM usuario_rol ur1 WHERE ur1.id_usuario=u.id_usuario AND ur1.activo AND ur1.id_rol=8705),FALSE) hasPlayground,
            COALESCE((SELECT TRUE FROM usuario_rol ur1 WHERE ur1.id_usuario=u.id_usuario AND ur1.activo AND ur1.id_rol=8704),FALSE) isAdmin,
            COALESCE(u.cambiar_clave,FALSE) as cambiar_clave
     FROM usuario u
@@ -5220,4 +5040,26 @@ BEGIN
 
     COMMIT;
 
+END;
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_categorias_convivencia()
+BEGIN
+    SELECT id_categoria_convivencia, nombre FROM categoria_convivencia
+    WHERE activo;
+END;
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_lugares_convivencia(IN p_id_categoria_convivencia INT)
+BEGIN
+    SELECT id_lugar_convivencia, nombre FROM lugar_convivencia
+    WHERE activo AND id_categoria_convivencia=p_id_categoria_convivencia;
 END;

@@ -464,22 +464,6 @@ ALTER TABLE programasalud.campeonato
 
 
 /*-------------------------------------------------------------*/
--- delete from estudiante_deportes;
--- delete from tipo_documento;
-
-
--- DROP TABLE IF EXISTS programasalud.estudiante_deportes;
-DROP TABLE IF EXISTS programasalud.tipo_documento;
-
-CREATE TABLE programasalud.tipo_documento
-(
-    id_tipo_documento       INT AUTO_INCREMENT NOT NULL,
-    nombre                  VARCHAR(250) NOT NULL,
-    alcance                 VARCHAR(20) NOT NULL,
-    activo                  BOOLEAN NOT NULL DEFAULT TRUE,
-    PRIMARY KEY(id_tipo_documento)
-);
-
 
 
 
@@ -839,3 +823,36 @@ CREATE TABLE programasalud.cita_accion
     CONSTRAINT FK_cita_accion_accion FOREIGN KEY(id_accion) REFERENCES programasalud.accion(id_accion)
 );
 
+
+
+
+
+
+
+
+
+
+DROP TABLE IF EXISTS programasalud.categoria_convivencia;
+
+CREATE TABLE programasalud.categoria_convivencia
+(
+    id_categoria_convivencia    INT AUTO_INCREMENT NOT NULL,
+    nombre                      VARCHAR(500) NOT NULL,
+    activo                      BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_categoria_convivencia)
+);
+
+
+
+DROP TABLE IF EXISTS programasalud.lugar_convivencia;
+
+CREATE TABLE programasalud.lugar_convivencia
+(
+    id_lugar_convivencia        INT AUTO_INCREMENT NOT NULL,
+    id_categoria_convivencia    INT NOT NULL,
+    nombre                      VARCHAR(500) NOT NULL,
+    activo                      BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_lugar_convivencia),
+    CONSTRAINT FK_lugar_convivencia_categoria FOREIGN KEY(id_categoria_convivencia)
+        REFERENCES programasalud.categoria_convivencia(id_categoria_convivencia)
+);
