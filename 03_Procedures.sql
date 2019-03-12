@@ -1492,7 +1492,7 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.create_playground (IN p_nombre VARCHAR(100), IN p_ubicacion VARCHAR(250), IN p_cantidad DECIMAL(10,4), IN p_id_unidad_medida INT,
+CREATE OR REPLACE PROCEDURE programasalud.create_playground (IN p_nombre VARCHAR(100), IN p_id_lugar_convivencia INT, IN p_ubicacion VARCHAR(250), IN p_cantidad DECIMAL(10,4), IN p_id_unidad_medida INT,
                                                   IN p_anio INT, IN p_costo DECIMAL(10,4), IN p_estado VARCHAR(200), IN p_observaciones VARCHAR(1000),
                                                   OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -1518,8 +1518,8 @@ BEGIN
 
     START TRANSACTION;
 
-    INSERT INTO programasalud.espacio_convivencia (nombre,ubicacion,cantidad,id_unidad_medida,anio,costo,estado,observaciones)
-    VALUES ( INITCAP(p_nombre), INITCAP(p_ubicacion), p_cantidad,
+    INSERT INTO programasalud.espacio_convivencia (nombre,id_lugar_convivencia, ubicacion,cantidad,id_unidad_medida,anio,costo,estado,observaciones)
+    VALUES ( INITCAP(p_nombre), p_id_lugar_convivencia, INITCAP(p_ubicacion), p_cantidad,
              p_id_unidad_medida, p_anio, p_costo, INITCAP(p_estado), INITCAP(p_observaciones));
 
     SET o_result = LAST_INSERT_ID();
@@ -1545,6 +1545,8 @@ CREATE OR REPLACE PROCEDURE programasalud.get_playgrounds()
 BEGIN
     SELECT
         b.id_espacio_convivencia,
+        lc.nombre lugar_convivencia,
+        cc.nombre categoria_convivencia,
         b.nombre,
         b.ubicacion,
         b.cantidad,
@@ -1559,6 +1561,8 @@ BEGIN
     FROM
         espacio_convivencia b
     JOIN unidad_medida um on b.id_unidad_medida = um.id_unidad_medida AND um.activo
+    JOIN lugar_convivencia lc on b.id_lugar_convivencia = lc.id_lugar_convivencia
+    JOIN categoria_convivencia cc on lc.id_categoria_convivencia = cc.id_categoria_convivencia
     WHERE
         b.activo;
 
@@ -1574,6 +1578,10 @@ BEGIN
 
     SELECT
         b.id_espacio_convivencia,
+        lc.id_lugar_convivencia,
+        lc.nombre lugar_convivencia,
+        cc.id_categoria_convivencia,
+        cc.nombre categoria_convivencia,
         b.nombre,
         b.ubicacion,
         b.cantidad,
@@ -1587,6 +1595,8 @@ BEGIN
     FROM
         espacio_convivencia b
     JOIN unidad_medida um on b.id_unidad_medida = um.id_unidad_medida AND um.activo
+    JOIN lugar_convivencia lc on b.id_lugar_convivencia = lc.id_lugar_convivencia
+    JOIN categoria_convivencia cc on lc.id_categoria_convivencia = cc.id_categoria_convivencia
     WHERE
         b.activo
       AND b.id_espacio_convivencia=p_id_espacio_convivencia;
@@ -1598,7 +1608,7 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.update_playground ( IN p_id_espacio_convivencia INT, IN p_nombre VARCHAR(100), IN p_ubicacion VARCHAR(250), IN p_cantidad DECIMAL(10,4),
+CREATE OR REPLACE PROCEDURE programasalud.update_playground ( IN p_id_espacio_convivencia INT, IN p_nombre VARCHAR(100), IN p_id_lugar_convivencia INT, IN p_ubicacion VARCHAR(250), IN p_cantidad DECIMAL(10,4),
                                                    IN p_id_unidad_medida INT, IN p_anio INT, IN p_costo DECIMAL(10,4), IN p_estado VARCHAR(200), IN p_observaciones VARCHAR(1000),
                                                    OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
@@ -1637,6 +1647,7 @@ BEGIN
         SET
             b.nombre = INITCAP(trim(p_nombre)),
             b.ubicacion = INITCAP(trim(p_ubicacion)),
+            b.id_lugar_convivencia = p_id_lugar_convivencia,
             b.cantidad = p_cantidad,
             b.id_unidad_medida = p_id_unidad_medida,
             b.anio = p_anio,
