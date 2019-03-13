@@ -139,3 +139,8 @@ INSERT INTO programasalud.lugar_convivencia (id_categoria_convivencia, nombre) V
 (8703,'Parqueos Cii'),(8703,'Parqueos perímetro (T-3, T-5, T-6, T-7)'),(8703,'Garitas parqueos (T-3, T-5, T-6, T-7)'),
 (8703,'Garita T-1'),(8704,'Bancas'),(8704,'Postes'),(8704,'Toldos'),(8704,'Rampas'),(8705,'Pantallas'),(8705,'Cañoneras'),
 (8705,'Balanza');
+
+
+insert into medida (id_medida, nombre, id_tipo_dato, unidad_medida, valor_minimo, valor_maximo, obligatorio, activo) VALUES
+(1, 'Peso', 8701,'Libras',0,999,1,1),
+(2, 'Estatura', 8702, 'Metros',0,3,1,1);

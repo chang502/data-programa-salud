@@ -4503,9 +4503,10 @@ BEGIN
     SET o_result = -2;
 
     IF v_temp_id_asign <= 0 THEN
-        SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_telefono,p_cui,p_nov, null, p_carrera);
+
 
         IF v_flg_existe_persona= 0 THEN
+            SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_telefono,p_cui,p_nov, null, p_carrera);
             UPDATE persona p SET source = 'DEPORTES' WHERE p.id_persona=v_temp;
         END IF;
 
