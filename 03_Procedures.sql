@@ -4392,14 +4392,14 @@ BEGIN
            CONCAT(p2.nombre,' ',p2.apellido) atiende, m.nombre medida,
            pm.valor, m.unidad_medida unidad FROM persona_medida pm
     JOIN persona p on pm.id_persona = p.id_persona
-    JOIN cita c on pm.id_cita = c.id_cita
+    LEFT JOIN cita c on pm.id_cita = c.id_cita
     JOIN medida m on pm.id_medida = m.id_medida
-    JOIN clinica c2 on c.id_clinica = c2.id_clinica
-    JOIN doctor d on c.id_doctor = d.id_doctor
-    JOIN usuario u on d.id_usuario = u.id_usuario
-    JOIN persona p2 on u.id_persona = p2.id_persona
+    LEFT JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    LEFT JOIN doctor d on c.id_doctor = d.id_doctor
+    LEFT JOIN usuario u on d.id_usuario = u.id_usuario
+    LEFT JOIN persona p2 on u.id_persona = p2.id_persona
     WHERE
-    c.id_persona = (SELECT id_persona FROM cita where id_cita=p_id_cita)
+    pm.id_persona = (SELECT id_persona FROM cita where id_cita=p_id_cita)
     AND pm.activo
     ORDER BY pm.creado DESC;
 END;
@@ -4413,14 +4413,14 @@ BEGIN
            CONCAT(p2.nombre,' ',p2.apellido) atiende, m.nombre medida,
            pm.valor, m.unidad_medida unidad FROM persona_medida pm
     JOIN persona p on pm.id_persona = p.id_persona
-    JOIN cita c on pm.id_cita = c.id_cita
+    LEFT JOIN cita c on pm.id_cita = c.id_cita
     JOIN medida m on pm.id_medida = m.id_medida
-    JOIN clinica c2 on c.id_clinica = c2.id_clinica
-    JOIN doctor d on c.id_doctor = d.id_doctor
-    JOIN usuario u on d.id_usuario = u.id_usuario
-    JOIN persona p2 on u.id_persona = p2.id_persona
+    LEFT JOIN clinica c2 on c.id_clinica = c2.id_clinica
+    LEFT JOIN doctor d on c.id_doctor = d.id_doctor
+    LEFT JOIN usuario u on d.id_usuario = u.id_usuario
+    LEFT JOIN persona p2 on u.id_persona = p2.id_persona
     WHERE
-    c.id_persona = p_id_persona
+    pm.id_persona = p_id_persona
     AND pm.activo
     ORDER BY pm.creado DESC;
 END;
@@ -4455,6 +4455,7 @@ BEGIN
     DECLARE v_temp INT;
     DECLARE v_flg_existe_persona INT;
     DECLARE v_flg_existe_ficha INT;
+    DECLARE v_cupo_disciplina INT;
     DECLARE v_temp_id_asign INT;
     DECLARE v_semestre VARCHAR(6);
     DECLARE EXIT HANDLER FOR 1062
@@ -4475,17 +4476,19 @@ BEGIN
 
     SET o_result = -1;
     SET v_temp_id_asign = -1;
-
+    SET v_cupo_disciplina = -1;
 
     START TRANSACTION;
 
     SET v_semestre = CONCAT(IF(MONTH(NOW())<7,1,2),'S',YEAR(NOW()));
 
+    -- revisar si existe la persona
     SELECT count(1), coalesce(id_persona,-1) INTO v_flg_existe_persona, v_temp
     FROM persona WHERE
        (cui=p_cui AND cui IS NOT NULL)
         OR (nov=p_nov AND nov IS NOT NULL);
 
+    -- revisar si existe asignación para la persona (si existe)
     IF v_flg_existe_persona > 0 THEN
         SELECT count(1) INTO v_temp_id_asign
         FROM asignacion_deportes
@@ -4500,45 +4503,60 @@ BEGIN
         END IF ;
     END IF;
 
-    SET o_result = -2;
-
     IF v_temp_id_asign <= 0 THEN
 
-
+        -- crear la persona
         IF v_flg_existe_persona= 0 THEN
             SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_telefono,p_cui,p_nov, null, p_carrera);
             UPDATE persona p SET source = 'DEPORTES' WHERE p.id_persona=v_temp;
         END IF;
 
-        SET o_result = -3;
+        -- revisar si hay cupo para la asignación
+        SELECT
+        d.limite-count(ad.id_disciplina) INTO v_cupo_disciplina
+        FROM
+        disciplina d
+        LEFT JOIN asignacion_deportes ad ON d.id_disciplina = ad.id_disciplina AND ad.activo
+        WHERE d.activo
+        AND d.semestre=v_semestre
+        AND d.id_disciplina=p_id_disciplina;
 
-        INSERT INTO programasalud.asignacion_deportes (id_disciplina, id_persona, semestre) VALUES
-        (p_id_disciplina, v_temp, v_semestre);
-        SET o_result = LAST_INSERT_ID();
-
-        SELECT count(1) INTO v_flg_existe_ficha
-        FROM persona_ficha
-        WHERE id_persona = v_temp;
-        SET o_result = -4;
-        IF v_flg_existe_ficha > 0 THEN
-            UPDATE persona_ficha
-            SET
-                telefono_emergencia = p_telefono_emergencia,
-                contacto_emergencia = p_contacto_emergencia,
-                flag_tiene_discapacidad = (p_flag_tiene_discapacidad = '1'),
-                id_tipo_discapacidad = if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ),
-                actualizado = NOW()
-            WHERE id_persona = v_temp;
+        IF v_cupo_disciplina <=0 THEN
+            SET o_result = -1;
+            SET o_mensaje = 'No hay cupo para la disciplina seleccionada';
         ELSE
-            INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia)
-            VALUES (v_temp,(p_flag_tiene_discapacidad = '1'), if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia);
+            INSERT INTO programasalud.asignacion_deportes (id_disciplina, id_persona, semestre) VALUES
+            (p_id_disciplina, v_temp, v_semestre);
+            SET o_result = LAST_INSERT_ID();
 
+            -- ficha de la persona
+            SELECT count(1) INTO v_flg_existe_ficha
+            FROM persona_ficha
+            WHERE id_persona = v_temp;
+
+            IF v_flg_existe_ficha > 0 THEN
+                UPDATE persona_ficha
+                SET
+                    telefono_emergencia = p_telefono_emergencia,
+                    contacto_emergencia = p_contacto_emergencia,
+                    flag_tiene_discapacidad = (p_flag_tiene_discapacidad = '1'),
+                    id_tipo_discapacidad = if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ),
+                    actualizado = NOW()
+                WHERE id_persona = v_temp;
+            ELSE
+                INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia)
+                VALUES (v_temp,(p_flag_tiene_discapacidad = '1'), if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia);
+            END IF;
+
+            -- medidas
+            INSERT INTO persona_medida (id_medida, id_persona, valor)
+            VALUES
+            (1,v_temp,p_peso),
+            (2,v_temp,p_estatura);
+
+            SET o_mensaje = 'Registro ingresado correctamente';
         END IF;
-
-        SET o_mensaje = 'Registro ingresado correctamente';
-
     END IF;
-
 
     COMMIT;
 
