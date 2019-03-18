@@ -2667,6 +2667,7 @@ BEGIN
            COALESCE((SELECT TRUE FROM usuario_rol ur1 WHERE ur1.id_usuario=u.id_usuario AND ur1.activo AND ur1.id_rol=8702),FALSE) hasDeportes,
            COALESCE((SELECT TRUE FROM usuario_rol ur1 WHERE ur1.id_usuario=u.id_usuario AND ur1.activo AND ur1.id_rol=8703),FALSE) hasProgramaSalud,
            COALESCE((SELECT TRUE FROM usuario_rol ur1 WHERE ur1.id_usuario=u.id_usuario AND ur1.activo AND ur1.id_rol=8705),FALSE) hasPlayground,
+           COALESCE((SELECT TRUE FROM usuario_rol ur1 WHERE ur1.id_usuario=u.id_usuario AND ur1.activo AND ur1.id_rol=8706),FALSE) hasIngresoDatos,
            COALESCE((SELECT TRUE FROM usuario_rol ur1 WHERE ur1.id_usuario=u.id_usuario AND ur1.activo AND ur1.id_rol=8704),FALSE) isAdmin,
            COALESCE(u.cambiar_clave,FALSE) as cambiar_clave
     FROM usuario u
@@ -4189,7 +4190,8 @@ END;
 CREATE OR REPLACE PROCEDURE programasalud.attend_appointment(IN p_id_usuario VARCHAR(50), IN p_id_cita INT)
 BEGIN
     SELECT c.id_cita, DATE_FORMAT(c.fecha,'%d/%m/%Y') fecha, DATE_FORMAT(c.fecha,'%H:%i') hora, DATE_FORMAT(fc.creado,'%H:%i') hora_inicio, p.id_persona id_paciente, concat(p.nombre,' ',p.apellido) paciente,
-           p2.id_persona id_atiende, concat(p2.nombre,' ',p2.apellido) atiende, c2.id_clinica, c2.nombre clinica, c.sintoma, fc.paso, pf.telefono_emergencia, pf.contacto_emergencia, pf.flag_tiene_discapacidad
+           p2.id_persona id_atiende, concat(p2.nombre,' ',p2.apellido) atiende, c2.id_clinica, c2.nombre clinica, c.sintoma, fc.paso,
+           pf.telefono_emergencia, pf.contacto_emergencia, pf.flag_tiene_discapacidad, pf.id_tipo_enfermedad
     FROM cita c
     JOIN persona p on c.id_persona = p.id_persona
     JOIN doctor d on c.id_doctor = d.id_doctor
@@ -4448,7 +4450,8 @@ CREATE OR REPLACE PROCEDURE programasalud.assign_discipline (IN p_cui NUMERIC(13
                                                              IN p_fecha_nacimiento VARCHAR(10), IN p_sexo VARCHAR(1), IN p_email VARCHAR(50), IN p_telefono VARCHAR(8),
                                                              IN p_telefono_emergencia VARCHAR(8), IN p_contacto_emergencia VARCHAR(150),
                                                              IN p_carrera VARCHAR(2), IN p_peso INT, IN p_estatura DECIMAL(5,2),
-                                                             IN p_flag_tiene_discapacidad VARCHAR(1), IN p_id_tipo_discapacidad INT, IN p_id_disciplina INT,
+                                                             IN p_flag_tiene_discapacidad VARCHAR(1), IN p_id_tipo_discapacidad INT,
+                                                             IN p_id_tipo_enfermedad INT, IN p_id_disciplina INT,
                                                              OUT o_result INT, OUT o_mensaje VARCHAR(500))
 BEGIN
 
@@ -4541,11 +4544,12 @@ BEGIN
                     contacto_emergencia = p_contacto_emergencia,
                     flag_tiene_discapacidad = (p_flag_tiene_discapacidad = '1'),
                     id_tipo_discapacidad = if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ),
+                    id_tipo_enfermedad = p_id_tipo_enfermedad,
                     actualizado = NOW()
                 WHERE id_persona = v_temp;
             ELSE
-                INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia)
-                VALUES (v_temp,(p_flag_tiene_discapacidad = '1'), if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia);
+                INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad)
+                VALUES (v_temp,(p_flag_tiene_discapacidad = '1'), if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad);
             END IF;
 
             -- medidas
@@ -4572,7 +4576,7 @@ END;
 
 CREATE OR REPLACE PROCEDURE programasalud.get_persona_ficha(IN p_id_persona INT)
 BEGIN
-    SELECT id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia
+    SELECT id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad
     FROM persona_ficha
     WHERE id_persona = p_id_persona;
 END;
@@ -4590,7 +4594,8 @@ END;
 
 CREATE OR REPLACE PROCEDURE programasalud.save_persona_ficha(IN p_id_persona INT, IN p_flag_tiene_discapacidad VARCHAR(1),
                                                              IN p_telefono_emergencia VARCHAR(8), IN p_contacto_emergencia VARCHAR(150),
-                                                             IN p_id_tipo_discapacidad INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+                                                             IN p_id_tipo_discapacidad INT, IN p_id_tipo_enfermedad INT,
+                                                             OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
     DECLARE v_temp INT;
@@ -4622,7 +4627,8 @@ BEGIN
             flag_tiene_discapacidad = (p_flag_tiene_discapacidad = '1'),
             id_tipo_discapacidad = IF(p_flag_tiene_discapacidad = '1', p_id_tipo_discapacidad, NULL),
             telefono_emergencia = p_telefono_emergencia,
-            contacto_emergencia = p_contacto_emergencia
+            contacto_emergencia = p_contacto_emergencia,
+            id_tipo_enfermedad = p_id_tipo_enfermedad
         WHERE
             id_persona = p_id_persona;
 
@@ -4630,9 +4636,9 @@ BEGIN
         SET o_mensaje = 'Registro actualizado correctamente';
     ELSE
 
-        INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia)
+        INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad)
         VALUES (p_id_persona, (p_flag_tiene_discapacidad = '1'),IF(p_flag_tiene_discapacidad = '1', p_id_tipo_discapacidad, NULL),
-                p_telefono_emergencia, p_contacto_emergencia);
+                p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad);
         SET o_result = p_id_persona;
         SET o_mensaje = 'Registro actualizado correctamente';
     END IF;
@@ -5093,3 +5099,206 @@ BEGIN
     SELECT id_lugar_convivencia, nombre FROM lugar_convivencia
     WHERE activo AND id_categoria_convivencia=p_id_categoria_convivencia;
 END;
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.registrar_datos_estudiante (IN p_nombre VARCHAR(500), IN p_apellido VARCHAR(500),
+                                                             IN p_fecha_nacimiento VARCHAR(10), IN p_sexo VARCHAR(1), IN p_email VARCHAR(50),
+                                                             IN p_cui NUMERIC(13,0), IN p_nov NUMERIC(10,0), IN p_carnet NUMERIC(9,0),  IN p_carrera VARCHAR(2),
+                                                             IN p_telefono VARCHAR(8), IN p_telefono_emergencia VARCHAR(8), IN p_contacto_emergencia VARCHAR(150),
+                                                             IN p_peso INT, IN p_estatura DECIMAL(5,2),
+                                                             IN p_flag_tiene_discapacidad VARCHAR(1), IN p_id_tipo_discapacidad INT, IN p_id_tipo_enfermedad INT,
+                                                             OUT o_result INT, OUT o_mensaje VARCHAR(500))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE v_flg_existe_persona INT;
+    DECLARE v_flg_existe_ficha INT;
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    SET o_result = -1;
+
+    START TRANSACTION;
+
+    -- revisar si existe la persona
+    SELECT count(1), coalesce(id_persona,-1) INTO v_flg_existe_persona, v_temp
+    FROM persona WHERE
+       (cui=p_cui AND cui IS NOT NULL)
+        OR (nov=p_nov AND nov IS NOT NULL)
+        OR (carnet=p_carnet AND carnet IS NOT NULL);
+
+
+
+        -- crear la persona
+    IF v_flg_existe_persona= 0 THEN
+        SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_telefono,p_cui,p_nov, p_carnet, p_carrera);
+        UPDATE persona p SET source = 'ESTUDIANTE' WHERE p.id_persona=v_temp;
+    END IF;
+
+
+    -- ficha de la persona
+    SELECT count(1) INTO v_flg_existe_ficha
+    FROM persona_ficha
+    WHERE id_persona = v_temp;
+
+    IF v_flg_existe_ficha > 0 THEN
+        UPDATE persona_ficha
+        SET
+            telefono_emergencia = p_telefono_emergencia,
+            contacto_emergencia = p_contacto_emergencia,
+            flag_tiene_discapacidad = (p_flag_tiene_discapacidad = '1'),
+            id_tipo_discapacidad = if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ),
+            id_tipo_enfermedad = p_id_tipo_enfermedad,
+            actualizado = NOW()
+        WHERE id_persona = v_temp;
+    ELSE
+        INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad)
+        VALUES (v_temp,(p_flag_tiene_discapacidad = '1'), if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad);
+    END IF;
+
+    -- medidas
+    INSERT INTO persona_medida (id_medida, id_persona, valor)
+    VALUES
+    (1,v_temp,p_peso),
+    (2,v_temp,p_estatura);
+
+    SET o_mensaje = 'Registro ingresado correctamente';
+
+
+
+    COMMIT;
+
+END;
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_disease_types()
+BEGIN
+    SELECT id_tipo_enfermedad, nombre
+    FROM tipo_enfermedad
+    WHERE activo;
+END;
+
+
+
+
+
+
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.registrar_datos_empleado (IN p_cui NUMERIC(13,0),IN p_fecha_nacimiento VARCHAR(10),IN p_telefono VARCHAR(8),
+                                                                    IN p_telefono_emergencia VARCHAR(8), IN p_contacto_emergencia VARCHAR(150),
+                                                                    IN p_peso INT, IN p_estatura DECIMAL(5,2),
+                                                                    IN p_flag_tiene_discapacidad VARCHAR(1), IN p_id_tipo_discapacidad INT, IN p_id_tipo_enfermedad INT,
+                                                                    IN p_nombre VARCHAR(500), IN p_apellido VARCHAR(500),
+                                                                    IN p_sexo VARCHAR(1), IN p_email VARCHAR(50),
+                                                                    IN p_regpersonal NUMERIC(9,0),  IN p_departamento VARCHAR(120),
+                                                                    OUT o_result INT, OUT o_mensaje VARCHAR(500))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE v_flg_existe_persona INT;
+    DECLARE v_flg_existe_ficha INT;
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    SET o_result = -1;
+
+    START TRANSACTION;
+
+    -- revisar si existe la persona
+    SELECT count(1), coalesce(id_persona,-1) INTO v_flg_existe_persona, v_temp
+    FROM persona WHERE
+       (cui=p_cui AND cui IS NOT NULL)
+        OR (regpersonal=p_regpersonal AND regpersonal IS NOT NULL);
+
+
+
+
+
+        -- crear la persona
+    IF v_flg_existe_persona= 0 THEN
+        SET v_temp = create_or_update_employee_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_cui,p_regpersonal, p_departamento);
+        UPDATE persona p SET source = 'EMPLEADO', p.telefono = p_telefono WHERE p.id_persona=v_temp;
+    END IF;
+
+
+    -- ficha de la persona
+    SELECT count(1) INTO v_flg_existe_ficha
+    FROM persona_ficha
+    WHERE id_persona = v_temp;
+
+    IF v_flg_existe_ficha > 0 THEN
+        UPDATE persona_ficha
+        SET
+            telefono_emergencia = p_telefono_emergencia,
+            contacto_emergencia = p_contacto_emergencia,
+            flag_tiene_discapacidad = (p_flag_tiene_discapacidad = '1'),
+            id_tipo_discapacidad = if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ),
+            id_tipo_enfermedad = p_id_tipo_enfermedad,
+            actualizado = NOW()
+        WHERE id_persona = v_temp;
+    ELSE
+        INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad)
+        VALUES (v_temp,(p_flag_tiene_discapacidad = '1'), if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad);
+    END IF;
+
+    -- medidas
+    INSERT INTO persona_medida (id_medida, id_persona, valor)
+    VALUES
+    (1,v_temp,p_peso),
+    (2,v_temp,p_estatura);
+
+    SET o_mensaje = 'Registro ingresado correctamente';
+
+
+
+    COMMIT;
+
+END;
+
+
+
+
+

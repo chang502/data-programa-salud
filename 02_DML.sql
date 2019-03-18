@@ -22,6 +22,7 @@ INSERT INTO programasalud.rol (id_rol, nombre_rol, descripcion_rol, activo) VALU
 INSERT INTO programasalud.rol (id_rol, nombre_rol, descripcion_rol, activo) VALUES (8703,'Programa Salud','Usuarios de la unidad de salud',TRUE);
 INSERT INTO programasalud.rol (id_rol, nombre_rol, descripcion_rol, activo) VALUES (8704,'Administrador','Administrador del sistema',TRUE);
 INSERT INTO programasalud.rol (id_rol, nombre_rol, descripcion_rol, activo) VALUES (8705,'Espacios de Convivencia','Infraestructura y Planificación para la Convivencia',TRUE);
+INSERT INTO programasalud.rol (id_rol, nombre_rol, descripcion_rol, activo) VALUES (8706,'Ingreso Datos','Para el ingreso de datos',TRUE);
 
 
 
@@ -71,6 +72,25 @@ INSERT INTO tipo_discapacidad (nombre, activo) VALUES ('Otra',true);
 
 
 
+INSERT INTO tipo_enfermedad (nombre) VALUES
+('Ninguna'),
+('Enfermedades Cardiovasculares'),
+('Cáncer'),
+('Enfermedad Pulmonar Obstructiva Crónica'),
+('Diabetes'),
+('Parkinson'),
+('Alzheimer'),
+('Esclerosis múltiple'),
+('Hipertensión'),
+('Lumbalgia'),
+('Colesterol'),
+('Depresión'),
+('Ansiedad'),
+('Tiroides'),
+('Osteoporosis'),
+('Otra');
+
+
 
 INSERT INTO tipo_persona (nombre, activo) VALUES ('Estudiante',true);
 INSERT INTO tipo_persona (nombre, activo) VALUES ('Personal Docente',true);
@@ -92,14 +112,11 @@ INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8702,TRUE);
 INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8703,TRUE);
 INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8704,TRUE);
 INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8705,TRUE);
+INSERT INTO usuario_rol (id_usuario,id_rol,activo)VALUES ('ps_admin',8706,TRUE);
 
 
 
 /*-----------------------------------------*/
-INSERT INTO tipo_documento (nombre, alcance) VALUES ('Registro Académico','Estudiante');
-INSERT INTO tipo_documento (nombre, alcance) VALUES ('Número de Orientación Vocacional','Estudiante');
-INSERT INTO tipo_documento (nombre, alcance) VALUES ('CUI','General');
-INSERT INTO tipo_documento (nombre, alcance) VALUES ('Registro Personal','Empleado');
 
 
 

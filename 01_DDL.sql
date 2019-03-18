@@ -741,6 +741,26 @@ ALTER TABLE programasalud.asignacion_deportes
 
 
 
+
+DROP TABLE IF EXISTS programasalud.tipo_enfermedad;
+
+CREATE TABLE programasalud.tipo_enfermedad
+(
+    id_tipo_enfermedad          INT AUTO_INCREMENT NOT NULL,
+    nombre                      VARCHAR(255) NOT NULL,
+    activo                      BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_tipo_enfermedad)
+);
+
+
+
+
+
+
+
+
+
+
 DROP TABLE IF EXISTS programasalud.persona_ficha;
 
 CREATE TABLE programasalud.persona_ficha
@@ -749,20 +769,15 @@ CREATE TABLE programasalud.persona_ficha
     flag_tiene_discapacidad   BOOLEAN NOT NULL,
     id_tipo_discapacidad      INT NULL,
     telefono_emergencia       VARCHAR(8) NOT NULL,
-    contacto_emergencia       VARCHAR(150) NOT NULL,
+    contacto_emergencia       VARCHAR(255) NOT NULL,
+    id_tipo_enfermedad        INT NOT NULL,
     creado                    DATETIME NOT NULL DEFAULT NOW(),
     actualizado               DATETIME NOT NULL DEFAULT NOW(),
-    PRIMARY KEY(id_persona)
+    PRIMARY KEY(id_persona),
+    CONSTRAINT FK_persona_ficha_persona FOREIGN KEY(id_persona) REFERENCES programasalud.persona(id_persona),
+    CONSTRAINT FK_persona_ficha_tipo_discapacidad FOREIGN KEY(id_tipo_discapacidad) REFERENCES programasalud.tipo_discapacidad(id_tipo_discapacidad),
+    CONSTRAINT FK_persona_ficha_tipo_enfermedad FOREIGN KEY(id_tipo_enfermedad) REFERENCES programasalud.tipo_enfermedad(id_tipo_enfermedad)
 );
-
-ALTER TABLE programasalud.persona_ficha
-    ADD CONSTRAINT FK_persona_ficha_persona FOREIGN KEY(id_persona)
-        REFERENCES programasalud.persona (id_persona);
-
-ALTER TABLE programasalud.persona_ficha
-    ADD CONSTRAINT FK_persona_ficha_tipo_discapacidad FOREIGN KEY(id_tipo_discapacidad)
-        REFERENCES programasalud.tipo_discapacidad (id_tipo_discapacidad);
-
 
 
 
