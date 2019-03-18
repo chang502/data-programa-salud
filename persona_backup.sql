@@ -12,7 +12,7 @@ select concat('(',id_persona,',','''',nombre,''',''',apellido,''',str_to_date(''
 */
 
 INSERT INTO persona (id_persona,nombre,apellido,fecha_nacimiento,sexo,email,telefono,cui,nov,regpersonal,carnet,source,carrera,departamento) VALUES
-(1,'Administrador','Administrador',str_to_date('01/08/2018','%d/%m/%Y'),'A','saludfiusac@gmail.com',null,null,null,null,null,'CREATED',null,null),
+-- (1,'Administrador','Administrador',str_to_date('01/08/2018','%d/%m/%Y'),'A','saludfiusac@gmail.com',null,null,null,null,null,'CREATED',null,null),
 (2,'ANDRES','CHANG HERRERA',str_to_date('24/03/1987','%d/%m/%Y'),'M','200611061@ingenieria.usac.edu.gt',null,2338682400101,2005014391,null,200611061,'CC_STUDENT','09',null),
 (3,'PABLO GERARDO','GARCIA PERUSINA',str_to_date('24/09/1986','%d/%m/%Y'),'M','petzydrummer@gmail.com',null,1647820600101,2004008233,null,200511819,'CC_STUDENT',null,null),
 (4,'DANIEL DANILO','GUERRA LECHUGA',str_to_date('14/02/1988','%d/%m/%Y'),'M','200611256@ingenieria.usac.edu.gt',null,1672801470101,2005007130,null,200611256,'CC_STUDENT',null,null),

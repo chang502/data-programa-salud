@@ -2799,7 +2799,7 @@ BEGIN
     OR (p.carnet like concat('%',p_id,'%') AND p.carnet is not null AND p_id!='')
     OR (p.nov like concat('%',p_id,'%') AND p.nov is not null AND p_id!='')
     OR (p.regpersonal like concat('%',p_id,'%') AND p.regpersonal is not null AND p_id!='')
-    OR (UPPER(CONCAT(p.nombre,' ',p.apellido)) LIKE CONCAT('%',REPLACE(UPPER(p_id COLLATE utf8_unicode_ci), ' ', '%'),'%')) )
+    OR (UPPER(CONCAT(p.nombre,' ',p.apellido)) LIKE CONCAT('%',REPLACE(UPPER(p_id /*COLLATE utf8_unicode_ci*/), ' ', '%'),'%')) )
     ORDER BY nombre
         limit 50;
 
