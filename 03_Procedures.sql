@@ -1813,31 +1813,21 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.get_students(IN p_id_tipo_documento INT, IN p_numero_documento VARCHAR(200), IN p_disciplina INT)
+CREATE OR REPLACE PROCEDURE programasalud.get_students(IN p_semestre VARCHAR(6), IN p_id_disciplina INT)
 BEGIN
 
-    SELECT
-        e.id_estudiante_deportes,
-        e.id_tipo_documento,
-        t.nombre tipo_documento,
-        e.numero_documento,
-        LOWER(e.email) email,
-        e.peso,
-        e.estatura,
-        if(e.cualidades_especiales,'Sí','No') cualidades_especiales,
-        e.id_disciplina,
-        d.nombre disciplina
-    FROM
-        estudiante_deportes e
-            JOIN tipo_documento t ON e.id_tipo_documento=t.id_tipo_documento AND t.activo
-            JOIN disciplina d ON e.id_disciplina = d.id_disciplina AND d.activo
-    WHERE
-        e.activo
-      AND (p_id_tipo_documento IS NULL OR e.id_tipo_documento=p_id_tipo_documento)
-      AND (p_numero_documento IS NULL OR LOWER(e.numero_documento) like p_numero_documento)
-      AND (p_disciplina IS NULL OR e.id_disciplina = p_disciplina)
-    ;
-
+    select ad.id_asignacion_deportes, p.id_persona, d.id_disciplina, concat(p.nombre,' ',p.apellido) nombre_completo, p.cui, coalesce(p.carnet,'') carnet, coalesce(p.nov,'') nov, d.nombre,
+ad.semestre, concat(if(substr(d.semestre,1,1)='1','Primer semestre, ','Segundo semestre, '),substr(d.semestre,3,4)) sem, d.semestre,
+       SUBSTR(concat(if(flg_lunes=1,'Lun, ',''),if(flg_martes=1,'Mar, ',''),if(flg_miercoles=1,'Mié, ',''),if(flg_jueves=1,'Jue, ',''),if(flg_viernes=1,'Vie, ',''),if(flg_sabado=1,'Sáb, ','')) , 1 ,
+              ((if(flg_lunes=1,1,0)+if(flg_martes=1,1,0)+if(flg_miercoles=1,1,0)+if(flg_jueves=1,1,0)+if(flg_viernes=1,1,0)+if(flg_sabado=1,1,0))*5-2)) dias,
+           concat(d.hora_inicio, ' - ', d.hora_fin) horas,
+           d.hora_inicio, d.hora_fin
+from asignacion_deportes ad
+join persona p on ad.id_persona = p.id_persona
+join disciplina d on ad.id_disciplina = d.id_disciplina and d.activo
+where ad.activo
+and (p_semestre IS NULL OR d.semestre=p_semestre)
+and (p_id_disciplina IS NULL OR d.id_disciplina = p_id_disciplina);
 END;
 
 
@@ -2925,7 +2915,8 @@ BEGIN
     disciplina d
     JOIN persona p on d.id_persona = p.id_persona
     left join asignacion_deportes ad on d.id_disciplina = ad.id_disciplina AND ad.activo
-    where d.activo;
+    where d.activo
+    group by d.id_disciplina;
 
 END;
 
