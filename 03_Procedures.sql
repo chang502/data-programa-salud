@@ -123,7 +123,7 @@ BEGIN
         END;
 
 
-    SET persona_id = -1;
+    SET persona_id = p_id_persona;
 
 
     START TRANSACTION;
@@ -1006,7 +1006,7 @@ BEGIN
                 u.id_usuario=LOWER(p_id_usuario);
 
         SELECT
-            TRIM(CONCAT(p.primer_nombre,' ',p.segundo_nombre)) INTO o_mensaje
+            TRIM(CONCAT(p.nombre,' ',p.apellido)) INTO o_mensaje
         FROM usuario u
                  JOIN persona p ON u.id_persona = p.id_persona
         WHERE u.activo
@@ -5255,8 +5255,6 @@ BEGIN
 
 
 
-
-
         -- crear la persona
     IF v_flg_existe_persona= 0 THEN
         SET v_temp = create_or_update_employee_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_cui,p_regpersonal, p_departamento);
@@ -5274,14 +5272,14 @@ BEGIN
         SET
             telefono_emergencia = p_telefono_emergencia,
             contacto_emergencia = p_contacto_emergencia,
-            flag_tiene_discapacidad = (p_flag_tiene_discapacidad = '1'),
-            id_tipo_discapacidad = if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ),
+            flag_tiene_discapacidad = (p_flag_tiene_discapacidad = '1' OR p_flag_tiene_discapacidad = 1),
+            id_tipo_discapacidad = if(p_flag_tiene_discapacidad = '1' OR p_flag_tiene_discapacidad = 1,p_id_tipo_discapacidad,null ),
             id_tipo_enfermedad = p_id_tipo_enfermedad,
             actualizado = NOW()
         WHERE id_persona = v_temp;
     ELSE
         INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad)
-        VALUES (v_temp,(p_flag_tiene_discapacidad = '1'), if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad);
+        VALUES (v_temp,(p_flag_tiene_discapacidad = '1' OR p_flag_tiene_discapacidad = 1), if(p_flag_tiene_discapacidad = '1' OR p_flag_tiene_discapacidad = 1,p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad);
     END IF;
 
     -- medidas
@@ -5290,6 +5288,7 @@ BEGIN
     (1,v_temp,p_peso),
     (2,v_temp,p_estatura);
 
+    SET o_result = 1;
     SET o_mensaje = 'Registro ingresado correctamente';
 
 
