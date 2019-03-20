@@ -1835,93 +1835,13 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.get_student(IN p_id_estudiante_deportes INT)
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_student_disciplines(IN p_semestre VARCHAR(6))
 BEGIN
 
-    SELECT
-        e.id_estudiante_deportes,
-        e.id_tipo_documento,
-        t.nombre tipo_documento,
-        e.numero_documento,
-        LOWER(e.email) email,
-        e.peso,
-        e.estatura,
-        if(e.cualidades_especiales,1,0) cualidadesespeciales,
-        if(e.cualidades_especiales,'Sí','No') cualidades_especiales,
-        e.id_disciplina,
-        d.nombre disciplina
-    FROM
-        estudiante_deportes e
-            JOIN tipo_documento t ON e.id_tipo_documento=t.id_tipo_documento AND t.activo
-            JOIN disciplina d ON e.id_disciplina = d.id_disciplina AND d.activo
-    WHERE
-        e.activo
-      AND e.id_estudiante_deportes = p_id_estudiante_deportes
-    ;
-
-END;
-
-
-
-
-
-
-CREATE OR REPLACE PROCEDURE programasalud.update_student ( IN p_id_estudiante_deportes INT, IN p_id_tipo_documento INT, IN p_numero_documento VARCHAR(200),
-                                                IN p_email VARCHAR(50), IN p_peso INT, IN p_estatura DECIMAL(5,2), IN p_cualidades_especiales VARCHAR(20), IN p_id_disciplina INT,
-                                                OUT o_result INT, OUT o_mensaje VARCHAR(100))
-BEGIN
-
-    DECLARE v_temp INT;
-    DECLARE EXIT HANDLER FOR 1062
-        BEGIN
-            SET o_result=-1;
-            SET o_mensaje='El registro ya existe';
-            ROLLBACK;
-        END;
-
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-        BEGIN
-            GET DIAGNOSTICS CONDITION 1
-                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
-            ROLLBACK;
-            SET o_result=-1;
-            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
-        END;
-
-    SET v_temp = -1;
-
-    START TRANSACTION;
-
-
-    SELECT COUNT(1) INTO o_result
-    FROM estudiante_deportes e
-    WHERE e.id_estudiante_deportes=p_id_estudiante_deportes
-      AND e.activo;
-
-
-    IF o_result > 0 THEN
-
-        UPDATE estudiante_deportes e
-        SET
-            e.id_tipo_documento = p_id_tipo_documento,
-            e.numero_documento = p_numero_documento,
-            e.email = lower(trim(p_email)),
-            e.peso = p_peso,
-            e.estatura = p_estatura,
-            e.cualidades_especiales = p_cualidades_especiales,
-            e.id_disciplina = p_id_disciplina
-        WHERE
-                e.id_estudiante_deportes = p_id_estudiante_deportes;
-
-
-
-        SET o_mensaje = 'Registro ingresado correctamente';
-    ELSE
-        SET o_mensaje = 'Registro no existe';
-    END IF;
-
-    COMMIT;
-
+select id_disciplina, nombre from disciplina
+    where activo and (p_semestre IS NULL OR semestre=p_semestre);
 END;
 
 
@@ -1932,7 +1852,11 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.delete_student(IN p_id_estudiante_deportes INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.delete_student(IN p_id_asignacion_deportes INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
@@ -1945,19 +1869,19 @@ BEGIN
     START TRANSACTION;
 
     SELECT COUNT(1) INTO o_result
-    FROM estudiante_deportes e
-    WHERE e.id_estudiante_deportes=p_id_estudiante_deportes
+    FROM asignacion_deportes e
+    WHERE e.id_asignacion_deportes=p_id_asignacion_deportes
       AND e.activo;
 
 
 
     if o_result>0 THEN
         UPDATE
-            estudiante_deportes e
+            asignacion_deportes e
         SET
             e.activo=false
         WHERE
-                e.id_estudiante_deportes=p_id_estudiante_deportes;
+                e.id_asignacion_deportes=p_id_asignacion_deportes;
         SET o_mensaje = 'Registro actualizado correctamente';
     ELSE
         SET o_mensaje = 'Registro no existe';
