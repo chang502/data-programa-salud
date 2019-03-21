@@ -878,3 +878,26 @@ CREATE TABLE programasalud.espacio_convivencia
 
 
 
+
+
+
+
+
+
+
+
+DROP TABLE IF EXISTS programasalud.reporte;
+
+CREATE TABLE programasalud.reporte
+(
+    id_reporte      INT AUTO_INCREMENT NOT NULL,
+    nombre          VARCHAR(255) NOT NULL,
+    sp_name         VARCHAR(255) NOT NULL,
+    param_names     VARCHAR(255) NULL,
+    param_types     VARCHAR(255) NULL,
+    param_number    INT NOT NULL DEFAULT 0,
+    id_rol          INT NOT NULL,
+    activo          BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_reporte),
+    CONSTRAINT FK_reporte_rol FOREIGN KEY(id_rol) REFERENCES programasalud.rol (id_rol)
+);

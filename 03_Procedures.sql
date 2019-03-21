@@ -5214,5 +5214,27 @@ END;
 
 
 
+CREATE OR REPLACE PROCEDURE programasalud.get_reports(IN p_id_usuario VARCHAR(50))
+BEGIN
+    select distinct id_reporte,nombre from reporte r
+    join usuario_rol ur on r.id_rol = ur.id_rol and ur.activo
+    where r.activo and ur.id_usuario=p_id_usuario;
+END;
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_reportparams(IN p_id_reporte INT, IN p_id_usuario VARCHAR(50))
+BEGIN
+    select
+        r.param_names, r.param_types, r.param_number
+    from reporte r
+    join usuario_rol ur on r.id_rol = ur.id_rol and ur.activo
+    where r.activo and ur.id_usuario=p_id_usuario
+    AND r.id_reporte=p_id_reporte;
+END;
+
+
 
 

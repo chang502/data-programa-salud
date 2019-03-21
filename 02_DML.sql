@@ -28,6 +28,14 @@ INSERT INTO programasalud.rol (id_rol, nombre_rol, descripcion_rol, activo) VALU
 
 
 
+INSERT INTO reporte (nombre, sp_name, param_names, param_types, param_number, id_rol) VALUES ('Reporte de citas','rpt_citas','fecha_inicio,fecha_fin','datefield,datefield',2,8701);
+
+
+
+
+
+
+
 INSERT INTO programasalud.especialidad (especialidad, activo) VALUES ('Enfermería',TRUE);
 INSERT INTO programasalud.especialidad (especialidad, activo) VALUES ('Odontología',TRUE);
 INSERT INTO programasalud.especialidad (especialidad, activo) VALUES ('Medicina General',TRUE);
@@ -161,3 +169,7 @@ INSERT INTO programasalud.lugar_convivencia (id_categoria_convivencia, nombre) V
 insert into medida (id_medida, nombre, id_tipo_dato, unidad_medida, valor_minimo, valor_maximo, obligatorio, activo) VALUES
 (1, 'Peso', 8701,'Libras',0,999,1,1),
 (2, 'Estatura', 8702, 'Metros',0,3,1,1);
+
+
+
+
