@@ -28,7 +28,10 @@ INSERT INTO programasalud.rol (id_rol, nombre_rol, descripcion_rol, activo) VALU
 
 
 
-INSERT INTO reporte (nombre, sp_name, param_names, param_types, param_number, id_rol) VALUES ('Reporte de citas','rpt_citas','fecha_inicio,fecha_fin','datefield,datefield',2,8701);
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name, id_rol) VALUES (8701, 'Reporte de citas','rpt_citas',8701);
+INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden) VALUES
+            (8701, 'Fecha Inicio','fecha_inicio','datefield',1),
+            (8701, 'Fecha Fin','fecha_fin','datefield',2);
 
 
 
@@ -58,6 +61,7 @@ INSERT INTO programasalud.tipo_dato_medida (id_tipo_dato, tipo_dato, activo) VAL
 INSERT INTO programasalud.unidad_medida (nombre, nombre_corto) VALUES ('Metros lineales','m');
 INSERT INTO programasalud.unidad_medida (nombre, nombre_corto) VALUES ('Metros cuadrados','m²');
 INSERT INTO programasalud.unidad_medida (nombre, nombre_corto) VALUES ('Unidades','u');
+INSERT INTO programasalud.unidad_medida (nombre, nombre_corto) VALUES ('Global',' ');
 
 
 

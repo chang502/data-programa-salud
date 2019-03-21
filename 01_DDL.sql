@@ -860,14 +860,14 @@ CREATE TABLE programasalud.espacio_convivencia
 (
     id_espacio_convivencia  INT AUTO_INCREMENT NOT NULL,
     nombre                  VARCHAR(100) NOT NULL,
-    ubicacion               VARCHAR(250) NOT NULL,
+    ubicacion               VARCHAR(250) NULL,
     cantidad                DECIMAL(10,4) NOT NULL,
     id_unidad_medida        INT NOT NULL,
     id_lugar_convivencia    INT NOT NULL,
     anio                    INT NOT NULL,
     costo                   DECIMAL(10,4) NOT NULL,
-    estado                  VARCHAR(200) NOT NULL,
-    observaciones           VARCHAR(1000),
+    estado                  ENUM('PLANIFICACION', 'EJECUCION', 'SUPERVISION', 'FINALIZADO', 'VIGENTE', 'SUSPENDIDO') NOT NULL,
+    observaciones           VARCHAR(2000),
     activo                  BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_espacio_convivencia),
     CONSTRAINT FK_espacio_convivencia_medida FOREIGN KEY(id_unidad_medida)
@@ -886,18 +886,34 @@ CREATE TABLE programasalud.espacio_convivencia
 
 
 
+DROP TABLE IF EXISTS programasalud.reporte_parametro;
 DROP TABLE IF EXISTS programasalud.reporte;
 
 CREATE TABLE programasalud.reporte
 (
-    id_reporte      INT AUTO_INCREMENT NOT NULL,
+    id_reporte      INT NOT NULL,
     nombre          VARCHAR(255) NOT NULL,
     sp_name         VARCHAR(255) NOT NULL,
-    param_names     VARCHAR(255) NULL,
-    param_types     VARCHAR(255) NULL,
-    param_number    INT NOT NULL DEFAULT 0,
     id_rol          INT NOT NULL,
     activo          BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_reporte),
     CONSTRAINT FK_reporte_rol FOREIGN KEY(id_rol) REFERENCES programasalud.rol (id_rol)
 );
+
+
+
+DROP TABLE IF EXISTS programasalud.reporte_parametro;
+
+CREATE TABLE programasalud.reporte_parametro
+(
+    id_reporte_parametro        INT AUTO_INCREMENT NOT NULL,
+    id_reporte                  INT NOT NULL,
+    display_name                VARCHAR(255) NOT NULL,
+    var_name                    VARCHAR(255) NOT NULL,
+    var_type                    VARCHAR(255) NOT NULL,
+    orden                       INT NOT NULL DEFAULT 0,
+    activo                      BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_reporte_parametro),
+    CONSTRAINT FK_reporte_parametro_reporte FOREIGN KEY(id_reporte) REFERENCES programasalud.reporte(id_reporte)
+);
+
