@@ -755,6 +755,16 @@ CREATE TABLE programasalud.tipo_enfermedad
 
 
 
+DROP TABLE IF EXISTS programasalud.disciplina_persona;
+
+CREATE TABLE programasalud.disciplina_persona
+(
+    id_disciplina_persona       INT AUTO_INCREMENT NOT NULL,
+    nombre                      VARCHAR(255) NOT NULL,
+    activo                      BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_disciplina_persona)
+);
+
 
 
 
@@ -771,12 +781,14 @@ CREATE TABLE programasalud.persona_ficha
     telefono_emergencia       VARCHAR(8) NOT NULL,
     contacto_emergencia       VARCHAR(255) NOT NULL,
     id_tipo_enfermedad        INT NOT NULL,
+    id_disciplina_persona     INT NOT NULL,
     creado                    DATETIME NOT NULL DEFAULT NOW(),
     actualizado               DATETIME NOT NULL DEFAULT NOW(),
     PRIMARY KEY(id_persona),
     CONSTRAINT FK_persona_ficha_persona FOREIGN KEY(id_persona) REFERENCES programasalud.persona(id_persona),
     CONSTRAINT FK_persona_ficha_tipo_discapacidad FOREIGN KEY(id_tipo_discapacidad) REFERENCES programasalud.tipo_discapacidad(id_tipo_discapacidad),
-    CONSTRAINT FK_persona_ficha_tipo_enfermedad FOREIGN KEY(id_tipo_enfermedad) REFERENCES programasalud.tipo_enfermedad(id_tipo_enfermedad)
+    CONSTRAINT FK_persona_ficha_tipo_enfermedad FOREIGN KEY(id_tipo_enfermedad) REFERENCES programasalud.tipo_enfermedad(id_tipo_enfermedad),
+    CONSTRAINT FK_persona_ficha_disciplina FOREIGN KEY(id_disciplina_persona) REFERENCES programasalud.disciplina_persona(id_disciplina_persona)
 );
 
 
@@ -867,13 +879,16 @@ CREATE TABLE programasalud.espacio_convivencia
     anio                    INT NOT NULL,
     costo                   DECIMAL(10,4) NOT NULL,
     estado                  ENUM('PLANIFICACION', 'EJECUCION', 'SUPERVISION', 'FINALIZADO', 'VIGENTE', 'SUSPENDIDO') NOT NULL,
+    id_persona              INT NOT NULL,
     observaciones           VARCHAR(2000),
     activo                  BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_espacio_convivencia),
     CONSTRAINT FK_espacio_convivencia_medida FOREIGN KEY(id_unidad_medida)
         REFERENCES programasalud.unidad_medida (id_unidad_medida),
     CONSTRAINT FK_espacio_convivencia_lugar FOREIGN KEY(id_lugar_convivencia)
-        REFERENCES programasalud.lugar_convivencia (id_lugar_convivencia)
+        REFERENCES programasalud.lugar_convivencia (id_lugar_convivencia),
+    CONSTRAINT FK_espacio_convivencia_persona FOREIGN KEY(id_persona)
+        REFERENCES programasalud.persona (id_persona)
 );
 
 
@@ -886,6 +901,7 @@ CREATE TABLE programasalud.espacio_convivencia
 
 
 
+DROP TABLE IF EXISTS programasalud.reporte_rol;
 DROP TABLE IF EXISTS programasalud.reporte_parametro;
 DROP TABLE IF EXISTS programasalud.reporte;
 
@@ -894,13 +910,24 @@ CREATE TABLE programasalud.reporte
     id_reporte      INT NOT NULL,
     nombre          VARCHAR(255) NOT NULL,
     sp_name         VARCHAR(255) NOT NULL,
-    id_rol          INT NOT NULL,
     activo          BOOLEAN NOT NULL DEFAULT TRUE,
-    PRIMARY KEY(id_reporte),
-    CONSTRAINT FK_reporte_rol FOREIGN KEY(id_rol) REFERENCES programasalud.rol (id_rol)
+    PRIMARY KEY(id_reporte)
 );
 
 
+
+DROP TABLE IF EXISTS programasalud.reporte_rol;
+
+CREATE TABLE programasalud.reporte_rol
+(
+    id_reporte_rol  INT AUTO_INCREMENT NOT NULL,
+    id_reporte      INT NOT NULL,
+    id_rol          INT NOT NULL,
+    activo          BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_reporte_rol),
+    CONSTRAINT FK_reporte_rol_reporte FOREIGN KEY(id_reporte) REFERENCES programasalud.reporte (id_reporte),
+    CONSTRAINT FK_reporte_rol_rol FOREIGN KEY(id_rol) REFERENCES programasalud.rol (id_rol)
+);
 
 DROP TABLE IF EXISTS programasalud.reporte_parametro;
 
@@ -911,6 +938,7 @@ CREATE TABLE programasalud.reporte_parametro
     display_name                VARCHAR(255) NOT NULL,
     var_name                    VARCHAR(255) NOT NULL,
     var_type                    VARCHAR(255) NOT NULL,
+    moreinfo                    VARCHAR(500) NOT NULL DEFAULT '{}',
     orden                       INT NOT NULL DEFAULT 0,
     activo                      BOOLEAN NOT NULL DEFAULT TRUE,
     PRIMARY KEY(id_reporte_parametro),

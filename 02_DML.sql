@@ -27,12 +27,81 @@ INSERT INTO programasalud.rol (id_rol, nombre_rol, descripcion_rol, activo) VALU
 
 
 
+delete from reporte_parametro where activo;
+delete from reporte_rol where activo;
+delete from reporte where activo;
 
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name, id_rol) VALUES (8701, 'Reporte de citas','rpt_citas',8701);
-INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden) VALUES
-            (8701, 'Fecha Inicio','fecha_inicio','datefield',1),
-            (8701, 'Fecha Fin','fecha_fin','datefield',2);
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8701, 'Reporte de citas','rpt_citas');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8701,8701);
+INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
+            (8701, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+            (8701, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
 
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8702, '[Admin] Reporte de citas','rpt_citas_admin');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8702,8704);
+INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
+            (8702, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+            (8702, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
+
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8703, 'Espacios de Convivencia','rpt_espacios_convivencia');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8703,8705),(8703,8704);
+INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
+            (8703, 'Año','anio','numberfield',1,'{ hideTrigger: true,allowDecimals: false,enforceMaxLength: true,minValue: 1900,maxValue: 2999}');
+
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8704, 'Personas federadas','rpt_personas_federadas');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8704,8701),(8704,8702),(8704,8703),(8704,8704);
+
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8705, 'Personas con enfermedades crónicas','rpt_personas_enfermedades');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8705,8701),(8705,8702),(8705,8703),(8705,8704);
+
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8706, 'Personas con capacidades especiales','rpt_personas_cualidades_especiales');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8706,8701),(8706,8702),(8706,8703),(8706,8704);
+
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8707, 'Reporte de bebederos','rpt_bebederos');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8707,8703),(8707,8704);
+INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
+            (8707, 'Fecha mant. entre','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+            (8707, 'y','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
+
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8708, 'Reporte de capacitaciones','rpt_capacitaciones');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8708,8703),(8708,8704);
+INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
+            (8708, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+            (8708, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
+
+
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8709, 'Reporte de capacitaciones con asistentes','rpt_capacitaciones_asistentes');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8709,8703),(8709,8704);
+INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
+            (8709, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+            (8709, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
+
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8710, 'Selecciones','rpt_selecciones');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8710,8702),(8710,8703),(8710,8704);
+
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8711, 'Selecciones e integrantes','rpt_seleccion_integrantes');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8711,8702),(8711,8703),(8711,8704);
+
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8712, 'Campeonatos','rpt_campeonatos');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8712,8702),(8712,8703),(8712,8704);
+INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
+            (8712, 'Fecha Participación Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+            (8712, 'Fecha Participación Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
+
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8713, 'Asignaciones deportes por semestre','rpt_asignacion_deportes_semestre');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8713,8702),(8713,8704);
+INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
+            (8713, 'Semestre','semestre','numberfield',1,'{ hideTrigger: true,allowDecimals: false,enforceMaxLength: true,minValue: 1,maxValue: 2}'),
+            (8713, 'Año','anio','numberfield',2,'{ hideTrigger: true,allowDecimals: false,enforceMaxLength: true,minValue: 2018,maxValue: 2999}');
+
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8714, 'Asignaciones deportes por fecha','rpt_asignacion_deportes_fecha');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8714,8702),(8714,8704);
+INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
+            (8714, 'Fecha Asignación inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+            (8714, 'Fecha Asignación Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
+
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8715, 'Disciplinas deportivas','rpt_disciplinas');
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8715,8702),(8715,8704);
 
 
 
@@ -66,11 +135,54 @@ INSERT INTO programasalud.unidad_medida (nombre, nombre_corto) VALUES ('Global',
 
 
 
-
-
-
-
-
+INSERT INTO programasalud.disciplina_persona(nombre)VALUES
+('Ninguna'),
+('Asociación de Ecuestres'),
+('Asociación de Golf'),
+('Asociación de Hockey'),
+('Asociación de Navegación a Vela'),
+('Asociación de Paracaidismo'),
+('Asociación de Pentatlon'),
+('Asociación de Sóftbol'),
+('Asociación de Surf'),
+('Asociación de Tiro con Arco'),
+('Asociación de Tiro con Arma de Caza'),
+('Asociación de Vuelo Libre'),
+('Asociación de Rugby'),
+('Asociación de Billar'),
+('Asociación de Pesca Deportiva'),
+('Asociación de Polo'),
+('Asociación de Raquetbol'),
+('Asociación de Squash'),
+('Federación de Ajedrez'),
+('Federación de Andinismo'),
+('Federación de Atletismo'),
+('Federación de Bádminton'),
+('Federación de Baloncesto'),
+('Federación de Balonmano'),
+('Federación de Béisbol'),
+('Federación de Boliche'),
+('Federación de Boxeo'),
+('Federación de Ciclismo'),
+('Federación de Esgrima'),
+('Federación de Fisicoculturismo'),
+('Federación de Fútbol'),
+('Federación de Gimnasia'),
+('Federación de Judo'),
+('Federación de Karate'),
+('Federación de Levantamiento de Pesas'),
+('Federación de Levantamiento de Potencia'),
+('Federación de Luchas'),
+('Federación de Motociclismo'),
+('Federación de Natación, Clavados, Polo Acuático y Nado Sincronizado'),
+('Federación de Patinaje'),
+('Federación de Remo y Canotaje'),
+('Federación de Taekwondo'),
+('Federación de Tenis de Campo'),
+('Federación de Tenis de Mesa'),
+('Federación de Tiro Deportivo'),
+('Federación de Triatrlón'),
+('Federación de Voleibol');
 
 
 

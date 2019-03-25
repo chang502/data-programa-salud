@@ -1493,7 +1493,7 @@ END;
 
 
 CREATE OR REPLACE PROCEDURE programasalud.create_playground (IN p_nombre VARCHAR(100), IN p_id_lugar_convivencia INT, IN p_ubicacion VARCHAR(250), IN p_cantidad DECIMAL(10,4), IN p_id_unidad_medida INT,
-                                                  IN p_anio INT, IN p_costo DECIMAL(10,4), IN p_estado VARCHAR(200), IN p_observaciones VARCHAR(1000),
+                                                  IN p_anio INT, IN p_costo DECIMAL(10,4), IN p_estado VARCHAR(200), IN p_id_persona INT, IN p_observaciones VARCHAR(2000),
                                                   OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
@@ -1518,9 +1518,9 @@ BEGIN
 
     START TRANSACTION;
 
-    INSERT INTO programasalud.espacio_convivencia (nombre,id_lugar_convivencia, ubicacion,cantidad,id_unidad_medida,anio,costo,estado,observaciones)
-    VALUES ( INITCAP(p_nombre), p_id_lugar_convivencia, INITCAP(p_ubicacion), p_cantidad,
-             p_id_unidad_medida, p_anio, p_costo, INITCAP(p_estado), INITCAP(p_observaciones));
+    INSERT INTO programasalud.espacio_convivencia (nombre,id_lugar_convivencia, ubicacion,cantidad,id_unidad_medida,anio,costo,estado, id_persona,observaciones)
+    VALUES ( p_nombre, p_id_lugar_convivencia, p_ubicacion, p_cantidad,
+             p_id_unidad_medida, p_anio, p_costo, p_estado, p_id_persona, p_observaciones);
 
     SET o_result = LAST_INSERT_ID();
 
@@ -1557,12 +1557,15 @@ BEGIN
         b.anio,
         b.costo,
         b.estado,
+        b.id_persona,
+        CONCAT(p.nombre,' ',p.apellido) persona,
         b.observaciones
     FROM
         espacio_convivencia b
     JOIN unidad_medida um on b.id_unidad_medida = um.id_unidad_medida AND um.activo
     JOIN lugar_convivencia lc on b.id_lugar_convivencia = lc.id_lugar_convivencia
     JOIN categoria_convivencia cc on lc.id_categoria_convivencia = cc.id_categoria_convivencia
+    JOIN persona p on b.id_persona = p.id_persona
     WHERE
         b.activo;
 
@@ -1591,12 +1594,15 @@ BEGIN
         b.anio,
         b.costo,
         b.estado,
+        b.id_persona,
+        CONCAT(p.nombre,' ',p.apellido) persona,
         b.observaciones
     FROM
         espacio_convivencia b
     JOIN unidad_medida um on b.id_unidad_medida = um.id_unidad_medida AND um.activo
     JOIN lugar_convivencia lc on b.id_lugar_convivencia = lc.id_lugar_convivencia
     JOIN categoria_convivencia cc on lc.id_categoria_convivencia = cc.id_categoria_convivencia
+    JOIN persona p on b.id_persona = p.id_persona
     WHERE
         b.activo
       AND b.id_espacio_convivencia=p_id_espacio_convivencia;
@@ -1609,7 +1615,7 @@ END;
 
 
 CREATE OR REPLACE PROCEDURE programasalud.update_playground ( IN p_id_espacio_convivencia INT, IN p_nombre VARCHAR(100), IN p_id_lugar_convivencia INT, IN p_ubicacion VARCHAR(250), IN p_cantidad DECIMAL(10,4),
-                                                   IN p_id_unidad_medida INT, IN p_anio INT, IN p_costo DECIMAL(10,4), IN p_estado VARCHAR(200), IN p_observaciones VARCHAR(1000),
+                                                   IN p_id_unidad_medida INT, IN p_anio INT, IN p_costo DECIMAL(10,4), IN p_estado VARCHAR(200), IN p_id_persona INT, IN p_observaciones VARCHAR(2000),
                                                    OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
@@ -1645,15 +1651,16 @@ BEGIN
 
         UPDATE espacio_convivencia b
         SET
-            b.nombre = INITCAP(trim(p_nombre)),
-            b.ubicacion = INITCAP(trim(p_ubicacion)),
+            b.nombre = p_nombre,
+            b.ubicacion = p_ubicacion,
             b.id_lugar_convivencia = p_id_lugar_convivencia,
             b.cantidad = p_cantidad,
             b.id_unidad_medida = p_id_unidad_medida,
             b.anio = p_anio,
             b.costo = p_costo,
-            b.estado = INITCAP(TRIM(p_estado)),
-            b.observaciones = INITCAP(TRIM(p_observaciones))
+            b.estado = p_estado,
+            b.id_persona = p_id_persona,
+            b.observaciones = p_observaciones
         WHERE
                 b.id_espacio_convivencia = p_id_espacio_convivencia;
 
@@ -4366,7 +4373,7 @@ CREATE OR REPLACE PROCEDURE programasalud.assign_discipline (IN p_cui NUMERIC(13
                                                              IN p_telefono_emergencia VARCHAR(8), IN p_contacto_emergencia VARCHAR(150),
                                                              IN p_carrera VARCHAR(2), IN p_peso INT, IN p_estatura DECIMAL(5,2),
                                                              IN p_flag_tiene_discapacidad VARCHAR(1), IN p_id_tipo_discapacidad INT,
-                                                             IN p_id_tipo_enfermedad INT, IN p_id_disciplina INT,
+                                                             IN p_id_tipo_enfermedad INT, IN p_id_disciplina_persona INT, IN p_id_disciplina INT,
                                                              OUT o_result INT, OUT o_mensaje VARCHAR(500))
 BEGIN
 
@@ -4417,7 +4424,7 @@ BEGIN
 
         IF v_temp_id_asign>0 THEN
             SET o_result = -1;
-            SET o_mensaje = 'Ya está asignado';
+            SET o_mensaje = 'Ya existe una asignación, dirigirse al departamento de deportes.';
         END IF ;
     END IF;
 
@@ -4460,11 +4467,12 @@ BEGIN
                     flag_tiene_discapacidad = (p_flag_tiene_discapacidad = '1'),
                     id_tipo_discapacidad = if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ),
                     id_tipo_enfermedad = p_id_tipo_enfermedad,
+                    id_disciplina_persona = p_id_disciplina_persona,
                     actualizado = NOW()
                 WHERE id_persona = v_temp;
             ELSE
-                INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad)
-                VALUES (v_temp,(p_flag_tiene_discapacidad = '1'), if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad);
+                INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad, id_disciplina_persona)
+                VALUES (v_temp,(p_flag_tiene_discapacidad = '1'), if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad, p_id_disciplina_persona);
             END IF;
 
             -- medidas
@@ -4491,7 +4499,7 @@ END;
 
 CREATE OR REPLACE PROCEDURE programasalud.get_persona_ficha(IN p_id_persona INT)
 BEGIN
-    SELECT id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad
+    SELECT id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad, id_disciplina_persona
     FROM persona_ficha
     WHERE id_persona = p_id_persona;
 END;
@@ -4509,8 +4517,8 @@ END;
 
 CREATE OR REPLACE PROCEDURE programasalud.save_persona_ficha(IN p_id_persona INT, IN p_flag_tiene_discapacidad VARCHAR(1),
                                                              IN p_telefono_emergencia VARCHAR(8), IN p_contacto_emergencia VARCHAR(150),
-                                                             IN p_id_tipo_discapacidad INT, IN p_id_tipo_enfermedad INT,
-                                                             OUT o_result INT, OUT o_mensaje VARCHAR(100))
+                                                             IN p_id_tipo_discapacidad INT, IN p_id_tipo_enfermedad INT, IN p_id_disciplina_persona INT,
+                                                             OUT o_result INT, OUT o_mensaje VARCHAR(255))
 BEGIN
 
     DECLARE v_temp INT;
@@ -4543,6 +4551,7 @@ BEGIN
             id_tipo_discapacidad = IF(p_flag_tiene_discapacidad = '1', p_id_tipo_discapacidad, NULL),
             telefono_emergencia = p_telefono_emergencia,
             contacto_emergencia = p_contacto_emergencia,
+            id_disciplina_persona = p_id_disciplina_persona,
             id_tipo_enfermedad = p_id_tipo_enfermedad
         WHERE
             id_persona = p_id_persona;
@@ -4551,9 +4560,9 @@ BEGIN
         SET o_mensaje = 'Registro actualizado correctamente';
     ELSE
 
-        INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad)
+        INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad, id_disciplina_persona)
         VALUES (p_id_persona, (p_flag_tiene_discapacidad = '1'),IF(p_flag_tiene_discapacidad = '1', p_id_tipo_discapacidad, NULL),
-                p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad);
+                p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad, p_id_disciplina_persona);
         SET o_result = p_id_persona;
         SET o_mensaje = 'Registro actualizado correctamente';
     END IF;
@@ -4909,6 +4918,20 @@ END;
 
 
 
+CREATE OR REPLACE PROCEDURE programasalud.get_assignment_info_for_email(IN p_id_asignacion_deportes INT)
+BEGIN
+
+    select ad.id_asignacion_deportes, concat(p.nombre,' ',p.apellido) persona, p.email, d.nombre disciplina from asignacion_deportes ad
+    join persona p on ad.id_persona = p.id_persona
+    join disciplina d on ad.id_disciplina = d.id_disciplina
+    where ad.id_asignacion_deportes=p_id_asignacion_deportes;
+
+END;
+
+
+
+
+
 
 
 CREATE OR REPLACE PROCEDURE programasalud.get_patient(IN p_id_persona INT)
@@ -5031,7 +5054,7 @@ CREATE OR REPLACE PROCEDURE programasalud.registrar_datos_estudiante (IN p_nombr
                                                              IN p_cui NUMERIC(13,0), IN p_nov NUMERIC(10,0), IN p_carnet NUMERIC(9,0),  IN p_carrera VARCHAR(2),
                                                              IN p_telefono VARCHAR(8), IN p_telefono_emergencia VARCHAR(8), IN p_contacto_emergencia VARCHAR(150),
                                                              IN p_peso INT, IN p_estatura DECIMAL(5,2),
-                                                             IN p_flag_tiene_discapacidad VARCHAR(1), IN p_id_tipo_discapacidad INT, IN p_id_tipo_enfermedad INT,
+                                                             IN p_flag_tiene_discapacidad VARCHAR(1), IN p_id_tipo_discapacidad INT, IN p_id_tipo_enfermedad INT, IN p_id_disciplina_persona INT,
                                                              OUT o_result INT, OUT o_mensaje VARCHAR(500))
 BEGIN
 
@@ -5087,11 +5110,12 @@ BEGIN
             flag_tiene_discapacidad = (p_flag_tiene_discapacidad = '1'),
             id_tipo_discapacidad = if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ),
             id_tipo_enfermedad = p_id_tipo_enfermedad,
+            id_disciplina_persona = p_id_disciplina_persona,
             actualizado = NOW()
         WHERE id_persona = v_temp;
     ELSE
-        INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad)
-        VALUES (v_temp,(p_flag_tiene_discapacidad = '1'), if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad);
+        INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad, id_disciplina_persona)
+        VALUES (v_temp,(p_flag_tiene_discapacidad = '1'), if(p_flag_tiene_discapacidad = '1',p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad,p_id_disciplina_persona);
     END IF;
 
     -- medidas
@@ -5121,6 +5145,16 @@ END;
 
 
 
+CREATE OR REPLACE PROCEDURE programasalud.get_discipline_types()
+BEGIN
+    SELECT id_disciplina_persona, nombre
+    FROM disciplina_persona
+    WHERE activo;
+END;
+
+
+
+
 
 
 
@@ -5132,7 +5166,7 @@ END;
 CREATE OR REPLACE PROCEDURE programasalud.registrar_datos_empleado (IN p_cui NUMERIC(13,0),IN p_fecha_nacimiento VARCHAR(10),IN p_telefono VARCHAR(8),
                                                                     IN p_telefono_emergencia VARCHAR(8), IN p_contacto_emergencia VARCHAR(150),
                                                                     IN p_peso INT, IN p_estatura DECIMAL(5,2),
-                                                                    IN p_flag_tiene_discapacidad VARCHAR(1), IN p_id_tipo_discapacidad INT, IN p_id_tipo_enfermedad INT,
+                                                                    IN p_flag_tiene_discapacidad VARCHAR(1), IN p_id_tipo_discapacidad INT, IN p_id_tipo_enfermedad INT, IN p_id_disciplina_persona INT,
                                                                     IN p_nombre VARCHAR(500), IN p_apellido VARCHAR(500),
                                                                     IN p_sexo VARCHAR(1), IN p_email VARCHAR(50),
                                                                     IN p_regpersonal NUMERIC(9,0),  IN p_departamento VARCHAR(120),
@@ -5190,11 +5224,12 @@ BEGIN
             flag_tiene_discapacidad = (p_flag_tiene_discapacidad = '1' OR p_flag_tiene_discapacidad = 1),
             id_tipo_discapacidad = if(p_flag_tiene_discapacidad = '1' OR p_flag_tiene_discapacidad = 1,p_id_tipo_discapacidad,null ),
             id_tipo_enfermedad = p_id_tipo_enfermedad,
+            id_disciplina_persona = p_id_disciplina_persona,
             actualizado = NOW()
         WHERE id_persona = v_temp;
     ELSE
-        INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad)
-        VALUES (v_temp,(p_flag_tiene_discapacidad = '1' OR p_flag_tiene_discapacidad = 1), if(p_flag_tiene_discapacidad = '1' OR p_flag_tiene_discapacidad = 1,p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad);
+        INSERT INTO persona_ficha (id_persona, flag_tiene_discapacidad, id_tipo_discapacidad, telefono_emergencia, contacto_emergencia, id_tipo_enfermedad, id_disciplina_persona)
+        VALUES (v_temp,(p_flag_tiene_discapacidad = '1' OR p_flag_tiene_discapacidad = 1), if(p_flag_tiene_discapacidad = '1' OR p_flag_tiene_discapacidad = 1,p_id_tipo_discapacidad,null ), p_telefono_emergencia, p_contacto_emergencia, p_id_tipo_enfermedad,p_id_disciplina_persona);
     END IF;
 
     -- medidas
@@ -5216,9 +5251,11 @@ END;
 
 CREATE OR REPLACE PROCEDURE programasalud.get_reports(IN p_id_usuario VARCHAR(50))
 BEGIN
-    select distinct id_reporte,nombre from reporte r
-    join usuario_rol ur on r.id_rol = ur.id_rol and ur.activo
-    where r.activo and ur.id_usuario=p_id_usuario;
+    select distinct r.id_reporte,nombre from reporte r
+    join reporte_rol rr on r.id_reporte = rr.id_reporte
+    join usuario_rol ur on rr.id_rol = ur.id_rol and ur.activo
+    where r.activo and ur.id_usuario=p_id_usuario
+    ORDER BY r.nombre;
 END;
 
 
@@ -5227,17 +5264,31 @@ END;
 
 CREATE OR REPLACE PROCEDURE programasalud.get_reportparams(IN p_id_reporte INT, IN p_id_usuario VARCHAR(50))
 BEGIN
+    select distinct rp.id_reporte_parametro, rp.display_name, rp.var_name, rp.var_type, rp.moreinfo
+from reporte_parametro rp
+join reporte r on rp.id_reporte = r.id_reporte and r.id_reporte=p_id_reporte
+join reporte_rol rr on r.id_reporte = rr.id_reporte
+join usuario_rol ur on ur.id_rol=rr.id_rol and ur.id_usuario=p_id_usuario and ur.activo
+    WHERE rp.activo ORDER BY rp.orden;
+END;
 
-    select
-        rp.display_name, rp.var_name, rp.var_type
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_report_data_and_params(IN p_id_reporte INT, IN p_id_usuario VARCHAR(50))
+BEGIN
+    select distinct
+        rp.id_reporte_parametro, r.nombre, r.sp_name, rp.display_name, rp.var_name, rp.var_type
     from reporte r
-    join reporte_parametro rp on r.id_reporte = rp.id_reporte
-    join usuario_rol ur on r.id_rol = ur.id_rol and ur.activo
-    where r.activo and ur.id_usuario=p_id_usuario
-    AND r.id_reporte=p_id_reporte
-    AND rp.activo;
+    left join reporte_parametro rp on r.id_reporte = rp.id_reporte AND rp.activo
+    join reporte_rol rr on r.id_reporte = rr.id_reporte
+    join usuario_rol ur on rr.id_rol = ur.id_rol and ur.activo
+    where r.activo  and ur.id_usuario=p_id_usuario
+     AND r.id_reporte=p_id_reporte
+    order by rp.orden;
 
 END;
+
+
 
 
 
