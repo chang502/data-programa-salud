@@ -8,7 +8,7 @@ DROP USER IF EXISTS saludfiusac;
 # CREATE OR REPLACE USER 'saludfiusac' IDENTIFIED BY 'progsalud';
 
 
-#grant all privileges on programasalud.* to saludfiusac@'%' identified by 'progsalud';
+# grant all privileges on programasalud.* to saludfiusac@'%' identified by 'progsalud';
 
 USE programasalud;
 

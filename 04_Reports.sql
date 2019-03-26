@@ -1,3 +1,5 @@
+SET GLOBAL log_bin_trust_function_creators = 1;
+
 CREATE OR REPLACE PROCEDURE programasalud.rpt_citas(IN p_fecha_inicio VARCHAR(10),IN p_fecha_fin VARCHAR(10), IN p_id_usuario VARCHAR(50))
 BEGIN
     select concat(p.nombre,' ',p.apellido) "Paciente", c2.nombre "Carrera", p.departamento "Departamento", p.fecha_nacimiento "Fecha Nacimiento", p.sexo "Sexo",
@@ -42,7 +44,7 @@ CREATE OR REPLACE PROCEDURE programasalud.rpt_espacios_convivencia(IN p_anio INT
 BEGIN
     SELECT
            ec.nombre "Nombre",
-           ec.ubicacion "Ubicacion",
+           ec.ubicacion "Ubicación",
            ec.cantidad "Cantidad",
            um.nombre "Unidad Medida",
            trim(concat(ec.cantidad,' ',um.nombre_corto)) "Cantidad y Medida",

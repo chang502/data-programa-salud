@@ -1,4 +1,4 @@
-
+SET GLOBAL log_bin_trust_function_creators = 1;
 
 CREATE OR REPLACE FUNCTION programasalud.initcap(x varchar(50)) RETURNS varchar(50)
 BEGIN
@@ -1128,78 +1128,6 @@ END;
 
 
 
-
-
-
-
-CREATE OR REPLACE PROCEDURE programasalud.update_discipline ( IN p_id_disciplina INT, IN p_nombre VARCHAR(100), IN p_semestre VARCHAR(6), IN p_limite INT,
-                                                   IN p_id_persona INT, IN p_primer_nombre VARCHAR(50), IN p_segundo_nombre VARCHAR(50),
-                                                   IN p_primer_apellido VARCHAR(50), IN p_segundo_apellido VARCHAR(50), IN p_fecha_nacimiento VARCHAR(10),
-                                                   IN p_sexo VARCHAR(50), IN p_email VARCHAR(50), IN p_telefono VARCHAR(8),
-                                                   OUT o_result INT, OUT o_mensaje VARCHAR(100))
-BEGIN
-
-    DECLARE v_temp INT;
-    DECLARE EXIT HANDLER FOR 1062
-        BEGIN
-            SET o_result=-1;
-            SET o_mensaje='El registro ya existe';
-            ROLLBACK;
-        END;
-
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-        BEGIN
-            GET DIAGNOSTICS CONDITION 1
-                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
-            ROLLBACK;
-            SET o_result=-1;
-            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
-        END;
-
-    SET v_temp = -1;
-
-    START TRANSACTION;
-
-
-    SELECT COUNT(1) INTO o_result
-    FROM disciplina d
-    WHERE d.id_disciplina=p_id_disciplina
-      AND d.activo;
-
-
-    IF o_result > 0 THEN
-
-        UPDATE disciplina d
-        SET
-            d.nombre = INITCAP(trim(p_nombre)),
-            d.semestre = UPPER(trim(p_semestre)),
-            d.limite = p_limite
-        WHERE
-                d.id_disciplina = p_id_disciplina;
-
-
-        UPDATE persona p
-        SET
-            p.primer_nombre = INITCAP(p_primer_nombre),
-            p.segundo_nombre = INITCAP(p_segundo_nombre),
-            p.primer_apellido = INITCAP(p_primer_apellido),
-            p.segundo_apellido = INITCAP(p_segundo_apellido),
-            p.fecha_nacimiento = str_to_date(p_fecha_nacimiento,'%d/%m/%Y'),
-            p.sexo = p_sexo,
-            p.email = LOWER(p_email),
-            p.telefono = p.telefono
-        WHERE p.id_persona = p_id_persona;
-
-
-
-        SET o_mensaje = 'Registro ingresado correctamente';
-    ELSE
-        SET o_mensaje = 'Registro no existe';
-    END IF;
-
-    COMMIT;
-
-END;
 
 
 
@@ -2551,6 +2479,201 @@ END;
 
 
 
+CREATE OR REPLACE PROCEDURE programasalud.get_disciplines()
+BEGIN
+
+    SELECT
+    d.id_disciplina, d.nombre, d.limite, count(ad.id_disciplina) asignados, d.limite-count(ad.id_disciplina) disponible,
+           concat(d.limite,' / ',count(ad.id_disciplina),' / ',(d.limite-count(ad.id_disciplina)),'') resumen_cantidad,
+    concat(if(substr(d.semestre,1,1)='1','Primer semestre, ','Segundo semestre, '),substr(d.semestre,3,4)) sem, d.semestre,
+
+    SUBSTR(concat(if(flg_lunes=1,'Lun, ',''),if(flg_martes=1,'Mar, ',''),if(flg_miercoles=1,'Mié, ',''),if(flg_jueves=1,'Jue, ',''),if(flg_viernes=1,'Vie, ',''),if(flg_sabado=1,'Sáb, ','')) , 1 ,
+              ((if(flg_lunes=1,1,0)+if(flg_martes=1,1,0)+if(flg_miercoles=1,1,0)+if(flg_jueves=1,1,0)+if(flg_viernes=1,1,0)+if(flg_sabado=1,1,0))*5-2)) dias,
+           concat(d.hora_inicio, ' - ', d.hora_fin) horas,
+           d.hora_inicio, d.hora_fin,
+           CONCAT(p.nombre,' ',p.apellido) nombre_completo
+    FROM
+    disciplina d
+    JOIN persona p on d.id_persona = p.id_persona
+    left join asignacion_deportes ad on d.id_disciplina = ad.id_disciplina AND ad.activo
+    where d.activo
+    group by d.id_disciplina;
+
+END;
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_discipline(IN p_id_disciplina INT)
+BEGIN
+
+    SELECT
+        d.id_disciplina, d.semestre, d.nombre, d.limite, d.flg_lunes, d.flg_martes, d.flg_miercoles,
+        d.flg_jueves, d.flg_viernes, d.flg_sabado, d.hora_inicio,d. hora_fin,
+        d.id_persona, concat(p.nombre,' ',p.apellido) persona_encargada
+    FROM
+        disciplina d
+        JOIN persona p on d.id_persona = p.id_persona
+    where d.activo
+      AND d.id_disciplina=p_id_disciplina;
+
+END;
+
+
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.update_discipline ( IN p_id_disciplina INT, IN p_semestre VARCHAR(6), IN p_nombre VARCHAR(100), IN p_limite INT,
+                                        IN p_flg_lunes INT, IN p_flg_martes INT, IN p_flg_miercoles INT, IN p_flg_jueves INT, IN p_flg_viernes INT, IN p_flg_sabado INT,
+                                        IN p_hora_inicio VARCHAR(5), IN p_hora_fin VARCHAR(5), IN p_id_persona INT,
+                                        OUT o_result INT, OUT o_mensaje VARCHAR(500))
+BEGIN
+
+    DECLARE v_temp INT;
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    SET v_temp = -1;
+
+    START TRANSACTION;
+
+
+
+
+
+    UPDATE programasalud.disciplina
+    SET
+        semestre=p_semestre,
+        nombre=UPPER(p_nombre),
+        limite=p_limite,
+        flg_lunes=(p_flg_lunes = 1),
+        flg_martes=(p_flg_martes = 1),
+        flg_miercoles=(p_flg_miercoles = 1),
+        flg_jueves=(p_flg_jueves = 1),
+        flg_viernes=(p_flg_viernes = 1),
+        flg_sabado=(p_flg_sabado = 1),
+        hora_inicio=p_hora_inicio,
+        hora_fin=p_hora_fin,
+        id_persona=p_id_persona
+    WHERE
+        id_disciplina=p_id_disciplina;
+
+    SET o_result = p_id_disciplina();
+
+    SET o_mensaje = 'Registro ingresado correctamente';
+
+    COMMIT;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    DECLARE v_temp INT;
+    DECLARE EXIT HANDLER FOR 1062
+        BEGIN
+            SET o_result=-1;
+            SET o_mensaje='El registro ya existe';
+            ROLLBACK;
+        END;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_result=-1;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    SET v_temp = -1;
+
+    START TRANSACTION;
+
+
+    SELECT COUNT(1) INTO o_result
+    FROM disciplina d
+    WHERE d.id_disciplina=p_id_disciplina
+    AND d.activo;
+
+
+    IF o_result > 0 THEN
+
+        UPDATE disciplina d
+        SET
+            d.nombre = INITCAP(trim(p_nombre)),
+            d.semestre = UPPER(trim(p_semestre)),
+            d.limite = p_limite
+        WHERE
+                d.id_disciplina = p_id_disciplina;
+
+        SET o_mensaje = 'Registro ingresado correctamente';
+    ELSE
+        SET o_mensaje = 'Registro no existe';
+    END IF;
+
+    COMMIT;
+
+END;
+
+
+
+
+
+
+
 
 
 
@@ -2823,55 +2946,6 @@ BEGIN
     END IF;
 
     COMMIT;
-END;
-
-
-
-
-
-CREATE OR REPLACE PROCEDURE programasalud.get_disciplines()
-BEGIN
-
-    SELECT
-    d.id_disciplina, d.nombre, d.limite, count(ad.id_disciplina) asignados, d.limite-count(ad.id_disciplina) disponible,
-           concat(d.limite,' / ',count(ad.id_disciplina),' / ',(d.limite-count(ad.id_disciplina)),'') resumen_cantidad,
-    concat(if(substr(d.semestre,1,1)='1','Primer semestre, ','Segundo semestre, '),substr(d.semestre,3,4)) sem, d.semestre,
-
-    SUBSTR(concat(if(flg_lunes=1,'Lun, ',''),if(flg_martes=1,'Mar, ',''),if(flg_miercoles=1,'Mié, ',''),if(flg_jueves=1,'Jue, ',''),if(flg_viernes=1,'Vie, ',''),if(flg_sabado=1,'Sáb, ','')) , 1 ,
-              ((if(flg_lunes=1,1,0)+if(flg_martes=1,1,0)+if(flg_miercoles=1,1,0)+if(flg_jueves=1,1,0)+if(flg_viernes=1,1,0)+if(flg_sabado=1,1,0))*5-2)) dias,
-           concat(d.hora_inicio, ' - ', d.hora_fin) horas,
-           d.hora_inicio, d.hora_fin,
-           CONCAT(p.nombre,' ',p.apellido) nombre_completo
-    FROM
-    disciplina d
-    JOIN persona p on d.id_persona = p.id_persona
-    left join asignacion_deportes ad on d.id_disciplina = ad.id_disciplina AND ad.activo
-    where d.activo
-    group by d.id_disciplina;
-
-END;
-
-
-CREATE OR REPLACE PROCEDURE programasalud.get_discipline(IN p_id_disciplina INT)
-BEGIN
-
-    SELECT
-    d.id_disciplina, d.nombre, d.limite, count(ad.id_disciplina) asignados, d.limite-count(ad.id_disciplina) disponible,
-           concat(d.limite,' / ',count(ad.id_disciplina),' / ',(d.limite-count(ad.id_disciplina)),'') resumen_cantidad,
-    concat(if(substr(d.semestre,1,1)='1','Primer semestre, ','Segundo semestre, '),substr(d.semestre,3,4)) sem, d.semestre,
-
-    SUBSTR(concat(if(flg_lunes=1,'Lun, ',''),if(flg_martes=1,'Mar, ',''),if(flg_miercoles=1,'Mié, ',''),if(flg_jueves=1,'Jue, ',''),if(flg_viernes=1,'Vie, ',''),if(flg_sabado=1,'Sáb, ','')) , 1 ,
-              ((if(flg_lunes=1,1,0)+if(flg_martes=1,1,0)+if(flg_miercoles=1,1,0)+if(flg_jueves=1,1,0)+if(flg_viernes=1,1,0)+if(flg_sabado=1,1,0))*5-2)) dias,
-           concat(d.hora_inicio, ' - ', d.hora_fin) horas,
-           d.hora_inicio, d.hora_fin,
-           CONCAT(p.nombre,' ',p.apellido) nombre_completo
-    FROM
-    disciplina d
-    JOIN persona p on d.id_persona = p.id_persona
-    left join asignacion_deportes ad on d.id_disciplina = ad.id_disciplina AND ad.activo
-    where d.activo
-          AND d.id_disciplina=p_id_disciplina;
-
 END;
 
 
