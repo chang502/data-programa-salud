@@ -215,11 +215,11 @@ INSERT INTO tipo_enfermedad (nombre) VALUES
 ('Otra');
 
 
-
+/*
 INSERT INTO tipo_persona (nombre, activo) VALUES ('Estudiante',true);
 INSERT INTO tipo_persona (nombre, activo) VALUES ('Personal Docente',true);
 INSERT INTO tipo_persona (nombre, activo) VALUES ('Personal Administrativo',true);
-
+*/
 
 
 

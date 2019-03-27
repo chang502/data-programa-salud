@@ -1186,10 +1186,9 @@ END;
 
 
 CREATE OR REPLACE PROCEDURE programasalud.create_drinkfountain (IN p_nombre VARCHAR(100), IN p_ubicacion VARCHAR(250), IN p_fecha_mantenimiento VARCHAR(10),
-                                                     IN p_estado VARCHAR(200), IN p_observaciones VARCHAR(1000), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+                                                     IN p_estado VARCHAR(200), IN p_observaciones VARCHAR(1000), IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
-    DECLARE v_temp INT;
     DECLARE EXIT HANDLER FOR 1062
         BEGIN
             SET o_result=-1;
@@ -1212,9 +1211,9 @@ BEGIN
 
     INSERT INTO programasalud.bebedero (nombre,
                                         ubicacion, fecha_mantenimiento, observaciones,
-                                        estado, activo)
+                                        estado, id_usuario)
     VALUES ( INITCAP(p_nombre), INITCAP(p_ubicacion),
-             str_to_date(p_fecha_mantenimiento,'%d/%m/%Y'), INITCAP(p_observaciones), INITCAP(p_estado), TRUE);
+             str_to_date(p_fecha_mantenimiento,'%d/%m/%Y'), p_observaciones, INITCAP(p_estado), p_id_usuario);
 
     SET o_result = LAST_INSERT_ID();
 
@@ -1235,7 +1234,7 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.get_drinkfountains()
+CREATE OR REPLACE PROCEDURE programasalud.get_drinkfountains( IN p_id_usuario VARCHAR(50))
 BEGIN
 
     SELECT
@@ -1248,7 +1247,7 @@ BEGIN
     FROM
         bebedero b
     WHERE
-        b.activo;
+        b.activo and b.id_usuario = p_id_usuario;
 
 END;
 
@@ -1321,7 +1320,8 @@ BEGIN
             b.ubicacion = INITCAP(trim(p_ubicacion)),
             b.fecha_mantenimiento = str_to_date(p_fecha_mantenimiento, '%d/%m/%Y'),
             b.estado = INITCAP(TRIM(p_estado)),
-            b.observaciones = INITCAP(TRIM(p_observaciones))
+            b.observaciones = p_observaciones,
+            b.actualizado=now()
         WHERE
                 b.id_bebedero = p_id_bebedero;
 
@@ -1365,7 +1365,8 @@ BEGIN
         UPDATE
             bebedero b
         SET
-            b.activo=false
+            b.activo=false,
+            b.actualizado=now()
         WHERE
                 b.id_bebedero = p_id_bebedero;
         SET o_mensaje = 'Registro actualizado correctamente';
@@ -1421,11 +1422,10 @@ END;
 
 
 CREATE OR REPLACE PROCEDURE programasalud.create_playground (IN p_nombre VARCHAR(100), IN p_id_lugar_convivencia INT, IN p_ubicacion VARCHAR(250), IN p_cantidad DECIMAL(10,4), IN p_id_unidad_medida INT,
-                                                  IN p_anio INT, IN p_costo DECIMAL(10,4), IN p_estado VARCHAR(200), IN p_id_persona INT, IN p_observaciones VARCHAR(2000),
+                                                  IN p_anio INT, IN p_costo DECIMAL(10,4), IN p_estado VARCHAR(200), IN p_id_persona INT, IN p_observaciones VARCHAR(2000), IN p_id_usuario VARCHAR(50),
                                                   OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
-    DECLARE v_temp INT;
     DECLARE EXIT HANDLER FOR 1062
         BEGIN
             SET o_result=-1;
@@ -1446,9 +1446,9 @@ BEGIN
 
     START TRANSACTION;
 
-    INSERT INTO programasalud.espacio_convivencia (nombre,id_lugar_convivencia, ubicacion,cantidad,id_unidad_medida,anio,costo,estado, id_persona,observaciones)
+    INSERT INTO programasalud.espacio_convivencia (nombre,id_lugar_convivencia, ubicacion,cantidad,id_unidad_medida,anio,costo,estado, id_persona,observaciones,id_usuario)
     VALUES ( p_nombre, p_id_lugar_convivencia, p_ubicacion, p_cantidad,
-             p_id_unidad_medida, p_anio, p_costo, p_estado, p_id_persona, p_observaciones);
+             p_id_unidad_medida, p_anio, p_costo, p_estado, p_id_persona, p_observaciones,p_id_usuario);
 
     SET o_result = LAST_INSERT_ID();
 
@@ -1469,7 +1469,7 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.get_playgrounds()
+CREATE OR REPLACE PROCEDURE programasalud.get_playgrounds(IN p_id_usuario VARCHAR(50))
 BEGIN
     SELECT
         b.id_espacio_convivencia,
@@ -1495,7 +1495,7 @@ BEGIN
     JOIN categoria_convivencia cc on lc.id_categoria_convivencia = cc.id_categoria_convivencia
     JOIN persona p on b.id_persona = p.id_persona
     WHERE
-        b.activo;
+        b.activo and b.id_usuario=p_id_usuario;
 
 END;
 
@@ -1588,7 +1588,8 @@ BEGIN
             b.costo = p_costo,
             b.estado = p_estado,
             b.id_persona = p_id_persona,
-            b.observaciones = p_observaciones
+            b.observaciones = p_observaciones,
+            b.actualizado = now()
         WHERE
                 b.id_espacio_convivencia = p_id_espacio_convivencia;
 
@@ -1632,7 +1633,8 @@ BEGIN
         UPDATE
             espacio_convivencia b
         SET
-            b.activo=false
+            b.activo=false,
+            b.actualizado = now()
         WHERE
                 b.id_espacio_convivencia = p_id_espacio_convivencia;
         SET o_mensaje = 'Registro actualizado correctamente';
@@ -1854,10 +1856,9 @@ END;
 
 
 CREATE OR REPLACE PROCEDURE programasalud.create_team (IN p_nombre VARCHAR(255), IN p_descripcion VARCHAR(255), IN p_especialidad VARCHAR(255),
-                                            IN p_estado VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+                                            IN p_estado VARCHAR(255), IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
-    DECLARE v_temp INT;
     DECLARE EXIT HANDLER FOR 1062
         BEGIN
             SET o_result=-1;
@@ -1880,9 +1881,9 @@ BEGIN
 
     INSERT INTO programasalud.seleccion (nombre,
                                          descripcion, especialidad,
-                                         estado, activo)
+                                         estado, id_usuario)
     VALUES ( INITCAP(p_nombre), INITCAP(p_descripcion),
-             INITCAP(p_especialidad), INITCAP(p_estado), TRUE);
+             INITCAP(p_especialidad), INITCAP(p_estado), p_id_usuario);
 
     SET o_result = LAST_INSERT_ID();
 
@@ -1903,7 +1904,7 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.get_teams()
+CREATE OR REPLACE PROCEDURE programasalud.get_teams(IN p_id_usuario VARCHAR(50))
 BEGIN
 
     SELECT
@@ -1915,7 +1916,7 @@ BEGIN
     FROM
         seleccion b
     WHERE
-        b.activo;
+        b.activo and b.id_usuario=p_id_usuario;
 
 END;
 
@@ -1985,7 +1986,8 @@ BEGIN
             b.nombre = INITCAP(trim(p_nombre)),
             b.descripcion = INITCAP(trim(p_descripcion)),
             b.especialidad = INITCAP(TRIM(p_especialidad)),
-            b.estado = INITCAP(TRIM(p_estado))
+            b.estado = INITCAP(TRIM(p_estado)),
+            b.actualizado = now()
         WHERE
                 b.id_seleccion = p_id_seleccion;
 
@@ -2029,7 +2031,8 @@ BEGIN
         UPDATE
             seleccion b
         SET
-            b.activo=false
+            b.activo=false,
+            b.actualizado = now()
         WHERE
                 b.id_seleccion = p_id_seleccion;
         SET o_mensaje = 'Registro actualizado correctamente';
@@ -2057,7 +2060,7 @@ END;
 
 
 
-
+/*
 CREATE OR REPLACE PROCEDURE programasalud.get_person_types()
 BEGIN
 
@@ -2068,7 +2071,7 @@ BEGIN
         tipo_persona t
     WHERE
         t.activo;
-END;
+END;*/
 
 
 
@@ -2078,10 +2081,9 @@ END;
 
 
 CREATE OR REPLACE PROCEDURE programasalud.create_championship (IN p_id_seleccion INT, IN p_nombre VARCHAR(255), IN p_fecha VARCHAR(10), IN p_victorioso VARCHAR(1),
-                                                    IN p_observaciones VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+                                                    IN p_observaciones VARCHAR(255), IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
-    DECLARE v_temp INT;
     DECLARE EXIT HANDLER FOR 1062
         BEGIN
             SET o_result=-1;
@@ -2104,9 +2106,9 @@ BEGIN
 
     INSERT INTO programasalud.campeonato (id_seleccion,
                                           nombre, fecha, victorioso, observaciones,
-                                          activo)
+                                          id_usuario)
     VALUES ( p_id_seleccion, INITCAP(p_nombre), str_to_date(p_fecha,'%d/%m/%Y'),
-             IF (p_victorioso='1' , TRUE ,FALSE), p_observaciones, TRUE);
+             IF (p_victorioso='1' , TRUE ,FALSE), p_observaciones, p_id_usuario);
 
     SET o_result = LAST_INSERT_ID();
 
@@ -2127,7 +2129,7 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.get_championships()
+CREATE OR REPLACE PROCEDURE programasalud.get_championships(IN p_id_usuario VARCHAR(50))
 BEGIN
 
     SELECT
@@ -2143,7 +2145,7 @@ BEGIN
         campeonato c
             JOIN seleccion s ON c.id_seleccion = s.id_seleccion
     WHERE
-        c.activo;
+        c.activo AND c.id_usuario=p_id_usuario;
 
 END;
 
@@ -2219,7 +2221,8 @@ BEGIN
             c.fecha = str_to_date(p_fecha,'%d/%m/%Y'),
             c.victorioso = if(p_victorioso='1',TRUE,FALSE),
             c.observaciones = INITCAP(p_observaciones),
-            c.activo = TRUE
+            c.activo = TRUE,
+            c.actualizado = now()
         WHERE
                 c.id_campeonato=p_id_campeonato;
 
@@ -2263,7 +2266,7 @@ BEGIN
         UPDATE
             campeonato c
         SET
-            c.activo=false
+            c.activo=false, c.actualizado = now()
         WHERE
                 c.id_campeonato = p_id_campeonato;
         SET o_mensaje = 'Registro actualizado correctamente';
@@ -2282,154 +2285,6 @@ END;
 
 
 
-
-CREATE OR REPLACE PROCEDURE programasalud.get_student_document_types()
-BEGIN
-
-    SELECT
-        t.id_tipo_documento,
-        t.nombre,
-           t.alcance
-    FROM
-        tipo_documento t
-    WHERE
-        t.alcance in ('Estudiante','General')
-        AND t.activo;
-END;
-
-
-
-CREATE OR REPLACE PROCEDURE programasalud.get_employee_document_types()
-BEGIN
-
-    SELECT
-        t.id_tipo_documento,
-        t.nombre,
-           t.alcance
-    FROM
-        tipo_documento t
-    WHERE
-        t.alcance in ('Empleado','General')
-        AND t.activo;
-END;
-
-
-
-
-
-CREATE OR REPLACE PROCEDURE programasalud.get_document_types()
-BEGIN
-
-    SELECT
-        t.id_tipo_documento,
-        t.nombre,
-           t.alcance
-    FROM
-        tipo_documento t
-    WHERE
-        t.activo;
-END;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-CREATE OR REPLACE PROCEDURE programasalud.get_search_person_count (IN p_identificacion VARCHAR(50), IN p_nombre_completo VARCHAR(203))
-BEGIN
-
-select count(1) result from programasalud.persona p
- where lower(CONCAT(TRIM(CONCAT(p.primer_nombre,' ',COALESCE(p.segundo_nombre,''))),' ',TRIM(CONCAT(p.primer_apellido,' ', COALESCE(p.segundo_apellido,''))))) like CONCAT('%',lower(p_nombre_completo),'%')
-;
-END;
-
-
-
-CREATE OR REPLACE PROCEDURE programasalud.search_person(IN p_identificacion VARCHAR(50), IN p_nombre_completo VARCHAR(203))
-BEGIN
-select p.id_persona, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
-       CONCAT(TRIM(CONCAT(p.primer_nombre,' ',p.segundo_nombre)),' ',TRIM(CONCAT(p.primer_apellido,' ', p.segundo_apellido))) nombre,
-       DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, sexo, email, telefono from persona p
- where lower(CONCAT(TRIM(CONCAT(p.primer_nombre,' ',COALESCE(p.segundo_nombre,''))),' ',TRIM(CONCAT(p.primer_apellido,' ', COALESCE(p.segundo_apellido,''))))) like CONCAT('%',lower(p_nombre_completo),'%')
-    limit 30;
-END;
-
-
-
-
-
-
-
-
-
-CREATE OR REPLACE PROCEDURE programasalud.get_search_person_by_id_number_count (IN p_identificacion VARCHAR(50))
-BEGIN
-select count(1) result from programasalud.identificacion_persona ip
- where ip.activo and concat(ip.numero_documento,'') like CONCAT('%',lower(p_identificacion),'%');
-END;
-
-
-
-
-
-CREATE OR REPLACE PROCEDURE programasalud.search_person_by_id_number(IN p_identificacion VARCHAR(50))
-BEGIN
-select ip.numero_documento,td.nombre tipo_documento, p.id_persona, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
-       CONCAT(TRIM(CONCAT(p.primer_nombre,' ',p.segundo_nombre)),' ',TRIM(CONCAT(p.primer_apellido,' ', p.segundo_apellido))) nombre,
-       DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, sexo, email, telefono
-from persona p
-inner join identificacion_persona ip on p.id_persona = ip.id_persona and ip.activo
-join tipo_documento td on ip.id_tipo_documento = td.id_tipo_documento
-where concat(ip.numero_documento,'') like CONCAT('%',lower(p_identificacion),'%')
-limit 30;
-END;
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-CREATE TABLE programasalud.disciplina
-(
-    id_disciplina       INT AUTO_INCREMENT NOT NULL,
-    semestre            VARCHAR(6) NOT NULL,
-    nombre              VARCHAR(100) NOT NULL,
-    limite              INT NOT NULL,
-    flg_lunes           BOOLEAN NOT NULL DEFAULT FALSE,
-    flg_martes          BOOLEAN NOT NULL DEFAULT FALSE,
-    flg_miercoles       BOOLEAN NOT NULL DEFAULT FALSE,
-    flg_jueves          BOOLEAN NOT NULL DEFAULT FALSE,
-    flg_viernes         BOOLEAN NOT NULL DEFAULT FALSE,
-    flg_sabado          BOOLEAN NOT NULL DEFAULT FALSE,
-    hora_inicio         VARCHAR(5) NOT NULL,
-    hora_fin            VARCHAR(5) NOT NULL,
-    id_persona          INT NOT NULL,
-    activo              BOOLEAN NOT NULL DEFAULT TRUE,
-    PRIMARY KEY(id_disciplina)
-);
-
- */
 
 
 
@@ -2550,119 +2405,36 @@ BEGIN
     START TRANSACTION;
 
 
+    select count(1) into v_temp
+    from programasalud.disciplina d
+    where d.activo and upper(trim(d.nombre))=upper(trim(p_nombre))
+    and d.semestre = p_semestre;
 
-
-
-    UPDATE programasalud.disciplina
-    SET
-        semestre=p_semestre,
-        nombre=UPPER(p_nombre),
-        limite=p_limite,
-        flg_lunes=(p_flg_lunes = 1),
-        flg_martes=(p_flg_martes = 1),
-        flg_miercoles=(p_flg_miercoles = 1),
-        flg_jueves=(p_flg_jueves = 1),
-        flg_viernes=(p_flg_viernes = 1),
-        flg_sabado=(p_flg_sabado = 1),
-        hora_inicio=p_hora_inicio,
-        hora_fin=p_hora_fin,
-        id_persona=p_id_persona
-    WHERE
-        id_disciplina=p_id_disciplina;
-
-    SET o_result = p_id_disciplina();
-
-    SET o_mensaje = 'Registro ingresado correctamente';
-
-    COMMIT;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    DECLARE v_temp INT;
-    DECLARE EXIT HANDLER FOR 1062
-        BEGIN
-            SET o_result=-1;
-            SET o_mensaje='El registro ya existe';
-            ROLLBACK;
-        END;
-
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-        BEGIN
-            GET DIAGNOSTICS CONDITION 1
-                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
-            ROLLBACK;
-            SET o_result=-1;
-            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
-        END;
-
-    SET v_temp = -1;
-
-    START TRANSACTION;
-
-
-    SELECT COUNT(1) INTO o_result
-    FROM disciplina d
-    WHERE d.id_disciplina=p_id_disciplina
-    AND d.activo;
-
-
-    IF o_result > 0 THEN
-
-        UPDATE disciplina d
+    IF v_temp> 0 then
+        set o_result = -1;
+        set o_mensaje = 'Ya existe una disciplina con ese nombre';
+    else
+        UPDATE programasalud.disciplina
         SET
-            d.nombre = INITCAP(trim(p_nombre)),
-            d.semestre = UPPER(trim(p_semestre)),
-            d.limite = p_limite
+            semestre=p_semestre,
+            nombre=UPPER(p_nombre),
+            limite=p_limite,
+            flg_lunes=(p_flg_lunes = 1),
+            flg_martes=(p_flg_martes = 1),
+            flg_miercoles=(p_flg_miercoles = 1),
+            flg_jueves=(p_flg_jueves = 1),
+            flg_viernes=(p_flg_viernes = 1),
+            flg_sabado=(p_flg_sabado = 1),
+            hora_inicio=p_hora_inicio,
+            hora_fin=p_hora_fin,
+            id_persona=p_id_persona
         WHERE
-                d.id_disciplina = p_id_disciplina;
+            id_disciplina=p_id_disciplina;
 
-        SET o_mensaje = 'Registro ingresado correctamente';
-    ELSE
-        SET o_mensaje = 'Registro no existe';
-    END IF;
+            SET o_result = 1;
+            SET o_mensaje = 'Registro actualizado correctamente';
+        end if;
+
 
     COMMIT;
 
@@ -2832,7 +2604,7 @@ END;
 CREATE OR REPLACE PROCEDURE programasalud.search_person_by_any_id (IN p_id VARCHAR(13))
 BEGIN
 
-    SELECT p.id_persona, /*p.nombre, p.telefono, p.apellido,*/
+    SELECT p.id_persona, /*p.nombre, p.telefono, p.apellido,Illegal mix of collations (utf8_unicode_ci,IMPLICIT) and (utf8_general_ci,IMPLICIT) for operation 'like'*/
            CONCAT(nombre,' ',apellido) nombre_completo,
            DATE_FORMAT(p.fecha_nacimiento, '%d/%m/%Y') fecha_nacimiento, /*p.sexo,*/
            p.email
@@ -2843,7 +2615,7 @@ BEGIN
     OR (p.carnet like concat('%',p_id,'%') AND p.carnet is not null AND p_id!='')
     OR (p.nov like concat('%',p_id,'%') AND p.nov is not null AND p_id!='')
     OR (p.regpersonal like concat('%',p_id,'%') AND p.regpersonal is not null AND p_id!='')
-    OR (UPPER(CONCAT(p.nombre,' ',p.apellido)) LIKE CONCAT('%',REPLACE(UPPER(p_id /*COLLATE utf8_unicode_ci*/), ' ', '%'),'%')) )
+    OR (UPPER(CONCAT(p.nombre,' ',p.apellido)) LIKE CONCAT('%',REPLACE(UPPER(p_id COLLATE utf8_unicode_ci), ' ', '%'),'%')) )
     ORDER BY nombre
         limit 50;
 
@@ -3049,7 +2821,7 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.create_team_person (IN p_id_seleccion INT, IN p_id_persona INT, IN p_fecha_inicio VARCHAR(10), IN p_fecha_fin VARCHAR(10), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+CREATE OR REPLACE PROCEDURE programasalud.create_team_person (IN p_id_seleccion INT, IN p_id_persona INT, IN p_fecha_inicio VARCHAR(10), IN p_fecha_fin VARCHAR(10), IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
     DECLARE v_temp INT;
@@ -3074,9 +2846,9 @@ BEGIN
     START TRANSACTION;
 
     INSERT INTO programasalud.seleccion_persona
-        (id_seleccion, id_persona, fecha_inicio, fecha_fin)
+        (id_seleccion, id_persona, fecha_inicio, fecha_fin, id_usuario)
     VALUES
-           (p_id_seleccion, p_id_persona,str_to_date(TRIM(p_fecha_inicio),'%d/%m/%Y'),if(p_fecha_fin='',null,str_to_date(TRIM(p_fecha_fin),'%d/%m/%Y')));
+           (p_id_seleccion, p_id_persona,str_to_date(TRIM(p_fecha_inicio),'%d/%m/%Y'),if(p_fecha_fin='',null,str_to_date(TRIM(p_fecha_fin),'%d/%m/%Y')),p_id_usuario);
 
     SET o_result = LAST_INSERT_ID();
 
@@ -3092,7 +2864,7 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.get_team_persons()
+CREATE OR REPLACE PROCEDURE programasalud.get_team_persons(IN p_id_usuario VARCHAR(50))
 BEGIN
 
     SELECT
@@ -3105,7 +2877,7 @@ BEGIN
     JOIN persona p on s.id_persona = p.id_persona
     JOIN seleccion s2 on s.id_seleccion = s2.id_seleccion AND s2.activo
     WHERE
-        s.activo;
+        s.activo and s.id_usuario = p_id_usuario;
 
 END;
 
@@ -3121,7 +2893,7 @@ BEGIN
         s.id_seleccion_persona, s.id_seleccion, s2.nombre nombre_seleccion, s.id_persona,
         concat(p.nombre,' ',p.apellido) nombre_persona,
         DATE_FORMAT(s.fecha_inicio, '%d/%m/%Y') fecha_inicio,
-        if(c.fecha_fin is null,'',DATE_FORMAT(c.fecha_fin, '%d/%m/%Y'))  fecha_fin
+        if(s.fecha_fin is null,'',DATE_FORMAT(s.fecha_fin, '%d/%m/%Y'))  fecha_fin
     FROM
         seleccion_persona s
     JOIN persona p on s.id_persona = p.id_persona
@@ -3266,7 +3038,7 @@ END;
 
 
 CREATE OR REPLACE PROCEDURE programasalud.create_training (IN p_nombre VARCHAR(250), IN p_descripcion VARCHAR(600), IN p_tipo_capacitacion VARCHAR(50),
-                                            IN p_estado VARCHAR(100), IN p_fecha_inicio VARCHAR(10), IN p_fecha_fin VARCHAR(10), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+                                            IN p_estado VARCHAR(100), IN p_fecha_inicio VARCHAR(10), IN p_fecha_fin VARCHAR(10), IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
     DECLARE v_temp INT;
@@ -3291,10 +3063,10 @@ BEGIN
     START TRANSACTION;
 
     INSERT INTO programasalud.capacitacion
-        (nombre, descripcion, tipo_capacitacion, estado, fecha_inicio, fecha_fin)
+        (nombre, descripcion, tipo_capacitacion, estado, fecha_inicio, fecha_fin, id_usuario)
     VALUES
            (UPPER(p_nombre), UPPER(p_descripcion), UPPER(p_tipo_capacitacion), UPPER(p_estado),
-            str_to_date(TRIM(p_fecha_inicio),'%d/%m/%Y'),if(p_fecha_fin='',null,str_to_date(TRIM(p_fecha_fin),'%d/%m/%Y')));
+            str_to_date(TRIM(p_fecha_inicio),'%d/%m/%Y'),if(p_fecha_fin='',null,str_to_date(TRIM(p_fecha_fin),'%d/%m/%Y')),p_id_usuario);
 
     SET o_result = LAST_INSERT_ID();
 
@@ -3310,7 +3082,7 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.get_trainings()
+CREATE OR REPLACE PROCEDURE programasalud.get_trainings(IN p_id_usuario VARCHAR(50))
 BEGIN
 
     SELECT
@@ -3321,7 +3093,7 @@ BEGIN
     FROM
          capacitacion c
     WHERE
-        c.activo;
+        c.activo and c.id_usuario=p_id_usuario;
 
 
 
@@ -3399,7 +3171,8 @@ BEGIN
             c.estado = UPPER(p_estado),
             c.fecha_inicio = str_to_date(TRIM(p_fecha_inicio),'%d/%m/%Y'),
             c.fecha_fin = if(p_fecha_fin='',null,str_to_date(TRIM(p_fecha_fin),'%d/%m/%Y')),
-            c.activo=TRUE
+            c.activo=TRUE,
+            c.actualizado=now()
         WHERE
             c.id_capacitacion = p_id_capacitacion;
 
@@ -3444,7 +3217,8 @@ BEGIN
         UPDATE
             capacitacion c
         SET
-            c.activo=false
+            c.activo=false,
+            c.actualizado=now()
         WHERE
             c.id_capacitacion = p_id_capacitacion;
         SET o_mensaje = 'Registro actualizado correctamente';
@@ -3484,7 +3258,7 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.create_training_attendee (IN p_id_capacitacion INT, IN p_id_persona INT, OUT o_result INT, OUT o_mensaje VARCHAR(100))
+CREATE OR REPLACE PROCEDURE programasalud.create_training_attendee (IN p_id_capacitacion INT, IN p_id_persona INT, IN p_id_usuario VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
     DECLARE v_temp INT;
@@ -3521,9 +3295,11 @@ BEGIN
             SET o_mensaje = 'Ya existe un asistente a esta capacitación';
         ELSE
             UPDATE
-                capacitacion_persona
+                capacitacion_persona cp
             SET
-                activo=TRUE
+                activo=TRUE,
+                actualizado = now(),
+                id_usuario = p_id_usuario
             WHERE
                 cp.id_capacitacion = p_id_capacitacion
                 AND cp.id_persona = p_id_persona;
@@ -3534,9 +3310,9 @@ BEGIN
 
     ELSEIF v_temp=0 THEN
         INSERT INTO programasalud.capacitacion_persona
-            (id_capacitacion, id_persona)
+            (id_capacitacion, id_persona, id_usuario)
         VALUES
-           (p_id_capacitacion, p_id_persona);
+           (p_id_capacitacion, p_id_persona, p_id_usuario);
 
         SET o_result = LAST_INSERT_ID();
 
@@ -3553,7 +3329,7 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.get_training_attendees()
+CREATE OR REPLACE PROCEDURE programasalud.get_training_attendees(IN p_id_usuario VARCHAR(50))
 BEGIN
 
     SELECT
@@ -3562,7 +3338,7 @@ BEGIN
     FROM programasalud.capacitacion_persona cp
     JOIN programasalud.capacitacion c ON cp.id_capacitacion = c.id_capacitacion AND c.activo
     JOIN programasalud.persona p ON cp.id_persona = p.id_persona
-    WHERE cp.activo;
+    WHERE cp.activo and c.id_usuario=p_id_usuario;
 
 END;
 
@@ -3632,7 +3408,8 @@ BEGIN
         SET
             c.id_capacitacion = p_id_capacitacion,
             c.id_persona = p_id_persona,
-            c.activo=TRUE
+            c.activo=TRUE,
+            c.actualizado=now()
         WHERE
             c.id_capacitacion = p_id_capacitacion;
 
@@ -3677,7 +3454,8 @@ BEGIN
         UPDATE
             capacitacion_persona c
         SET
-            c.activo=false
+            c.activo=false,
+            c.actualizado=now()
         WHERE
             c.id_capacitacion_persona = p_id_capacitacion_persona;
         SET o_mensaje = 'Registro actualizado correctamente';
@@ -4596,7 +4374,6 @@ CREATE OR REPLACE PROCEDURE programasalud.save_persona_ficha(IN p_id_persona INT
 BEGIN
 
     DECLARE v_temp INT;
-    DECLARE v_paso ENUM('CREADO', 'ATENDIENDO', 'EDITADO', 'FINALIZADO', 'CANCELADO');
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
             GET DIAGNOSTICS CONDITION 1
@@ -5040,7 +4817,6 @@ CREATE OR REPLACE PROCEDURE programasalud.update_person_info (IN p_id_persona IN
 BEGIN
 
     DECLARE v_temp INT;
-    DECLARE v_estado INT;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
         BEGIN
             GET DIAGNOSTICS CONDITION 1

@@ -315,12 +315,12 @@ CREATE TABLE programasalud.bebedero
     estado                  VARCHAR(200) NOT NULL,
     observaciones           VARCHAR(1000),
     activo                  BOOLEAN NOT NULL DEFAULT TRUE,
+    id_usuario VARCHAR(50) NOT NULL,
+    creado DATETIME NOT NULL DEFAULT NOW(),
+    actualizado DATETIME NOT NULL DEFAULT NOW(),
+    CONSTRAINT FK_bebedero_usuario FOREIGN KEY(id_usuario) REFERENCES programasalud.usuario(id_usuario),
     PRIMARY KEY(id_bebedero)
-);
-
-
-
-
+) ;
 
 
 
@@ -354,7 +354,8 @@ CREATE TABLE programasalud.tipo_discapacidad
 
 
 
-
+DROP TABLE IF EXISTS programasalud.seleccion_persona;
+DROP TABLE IF EXISTS programasalud.campeonato;
 DROP TABLE IF EXISTS programasalud.seleccion;
 
 CREATE TABLE programasalud.seleccion
@@ -365,6 +366,10 @@ CREATE TABLE programasalud.seleccion
     especialidad              VARCHAR(255) NOT NULL,
     estado                    VARCHAR(255) NOT NULL,
     activo                    BOOLEAN NOT NULL DEFAULT TRUE,
+    id_usuario VARCHAR(50) NOT NULL,
+    creado DATETIME NOT NULL DEFAULT NOW(),
+    actualizado DATETIME NOT NULL DEFAULT NOW(),
+    CONSTRAINT FK_seleccion_usuario FOREIGN KEY(id_usuario) REFERENCES programasalud.usuario(id_usuario),
     PRIMARY KEY(id_seleccion)
 );
 
@@ -374,29 +379,24 @@ CREATE TABLE programasalud.seleccion
 
 
 
+DROP TABLE IF EXISTS programasalud.seleccion_persona;
 
-
-
-
-
-
-
-
-
-DROP TABLE IF EXISTS programasalud.tipo_persona;
-
-CREATE TABLE programasalud.tipo_persona
+CREATE TABLE programasalud.seleccion_persona
 (
-    id_tipo_persona         INT AUTO_INCREMENT NOT NULL,
-    nombre                  VARCHAR(255) NOT NULL,
-    activo                  BOOLEAN NOT NULL DEFAULT TRUE,
-    PRIMARY KEY(id_tipo_persona)
+    id_seleccion_persona     INT AUTO_INCREMENT NOT NULL,
+    id_seleccion             INT NOT NULL,
+    id_persona               INT NOT NULL,
+    fecha_inicio             DATE NOT NULL,
+    fecha_fin                DATE NULL,
+    activo                   BOOLEAN NOT NULL DEFAULT TRUE,
+    id_usuario VARCHAR(50) NOT NULL,
+    creado DATETIME NOT NULL DEFAULT NOW(),
+    actualizado DATETIME NOT NULL DEFAULT NOW(),
+    CONSTRAINT FK_seleccion_persona_usuario FOREIGN KEY(id_usuario) REFERENCES programasalud.usuario(id_usuario),
+    PRIMARY KEY(id_seleccion_persona),
+    CONSTRAINT FK_seleccion_persona_seleccion FOREIGN KEY(id_seleccion) REFERENCES programasalud.seleccion(id_seleccion),
+    CONSTRAINT FK_seleccion_persona_persona FOREIGN KEY(id_persona) REFERENCES programasalud.persona(id_persona)
 );
-
-
-
-
-
 
 
 
@@ -414,13 +414,38 @@ CREATE TABLE programasalud.campeonato
     victorioso           BOOLEAN NOT NULL,
     observaciones        VARCHAR(255) NULL,
     activo               BOOLEAN NOT NULL DEFAULT TRUE,
+    id_usuario VARCHAR(50) NOT NULL,
+    creado DATETIME NOT NULL DEFAULT NOW(),
+    actualizado DATETIME NOT NULL DEFAULT NOW(),
+    CONSTRAINT FK_campeonato_seleccion FOREIGN KEY(id_seleccion) REFERENCES programasalud.seleccion (id_seleccion),
+    CONSTRAINT FK_campeonato_usuario FOREIGN KEY(id_usuario) REFERENCES programasalud.usuario(id_usuario),
     PRIMARY KEY(id_campeonato)
 );
 
 
-ALTER TABLE programasalud.campeonato
-    ADD CONSTRAINT FK_campeonato_seleccion FOREIGN KEY(id_seleccion)
-        REFERENCES programasalud.seleccion (id_seleccion);
+
+
+
+
+/*
+DROP TABLE IF EXISTS programasalud.tipo_persona;
+
+CREATE TABLE programasalud.tipo_persona
+(
+    id_tipo_persona         INT AUTO_INCREMENT NOT NULL,
+    nombre                  VARCHAR(255) NOT NULL,
+    activo                  BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_tipo_persona)
+);*/
+
+
+
+
+
+
+
+
+
 
 
 
@@ -494,6 +519,7 @@ ALTER TABLE programasalud.disciplina
 
 
 
+DROP TABLE IF EXISTS programasalud.capacitacion_persona;
 DROP TABLE IF EXISTS programasalud.capacitacion;
 
 CREATE TABLE programasalud.capacitacion
@@ -506,6 +532,10 @@ CREATE TABLE programasalud.capacitacion
     fecha_inicio                DATE NOT NULL,
     fecha_fin                   DATE NULL,
     activo                      BOOLEAN NOT NULL DEFAULT TRUE,
+    id_usuario VARCHAR(50) NOT NULL,
+    creado DATETIME NOT NULL DEFAULT NOW(),
+    actualizado DATETIME NOT NULL DEFAULT NOW(),
+    CONSTRAINT FK_capacitacion_usuario FOREIGN KEY(id_usuario) REFERENCES programasalud.usuario(id_usuario),
     PRIMARY KEY(id_capacitacion)
 );
 
@@ -523,19 +553,14 @@ CREATE TABLE programasalud.capacitacion_persona
     id_capacitacion             INT NOT NULL,
     id_persona                  INT NOT NULL,
     activo                      BOOLEAN NOT NULL DEFAULT TRUE,
-    PRIMARY KEY(id_capacitacion_persona)
+    id_usuario VARCHAR(50) NOT NULL,
+    creado DATETIME NOT NULL DEFAULT NOW(),
+    actualizado DATETIME NOT NULL DEFAULT NOW(),
+    CONSTRAINT FK_capacitacion_persona_usuario FOREIGN KEY(id_usuario) REFERENCES programasalud.usuario(id_usuario),
+    PRIMARY KEY(id_capacitacion_persona),
+    CONSTRAINT FK_capacitacion_persona_persona FOREIGN KEY(id_persona) REFERENCES programasalud.persona (id_persona),
+    CONSTRAINT FK_capacitacion_persona_capacitacion FOREIGN KEY(id_capacitacion) REFERENCES programasalud.capacitacion (id_capacitacion)
 );
-
-ALTER TABLE programasalud.capacitacion_persona
-    ADD CONSTRAINT FK_capacitacion_persona_persona FOREIGN KEY(id_persona)
-        REFERENCES programasalud.persona (id_persona);
-
-
-ALTER TABLE programasalud.capacitacion_persona
-    ADD CONSTRAINT FK_capacitacion_persona_capacitacion FOREIGN KEY(id_capacitacion)
-        REFERENCES programasalud.capacitacion (id_capacitacion);
-
-
 
 
 
@@ -882,6 +907,10 @@ CREATE TABLE programasalud.espacio_convivencia
     id_persona              INT NOT NULL,
     observaciones           VARCHAR(2000),
     activo                  BOOLEAN NOT NULL DEFAULT TRUE,
+    id_usuario VARCHAR(50) NOT NULL,
+    creado DATETIME NOT NULL DEFAULT NOW(),
+    actualizado DATETIME NOT NULL DEFAULT NOW(),
+    CONSTRAINT FK_espacio_convivencia_usuario FOREIGN KEY(id_usuario) REFERENCES programasalud.usuario(id_usuario),
     PRIMARY KEY(id_espacio_convivencia),
     CONSTRAINT FK_espacio_convivencia_medida FOREIGN KEY(id_unidad_medida)
         REFERENCES programasalud.unidad_medida (id_unidad_medida),
