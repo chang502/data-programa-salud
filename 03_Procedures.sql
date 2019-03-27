@@ -549,8 +549,8 @@ BEGIN
     INSERT INTO programasalud.medida (nombre,
                                       id_tipo_dato, unidad_medida, valor_minimo,
                                       valor_maximo, obligatorio, activo)
-    VALUES ( initcap(p_nombre), p_id_tipo_dato,
-             initcap(p_unidad_medida), p_valor_minimo, p_valor_maximo, (p_obligatorio = '1'), TRUE);
+    VALUES ( p_nombre, p_id_tipo_dato,
+             p_unidad_medida, p_valor_minimo, p_valor_maximo, (p_obligatorio = '1'), TRUE);
 
     SET o_result = LAST_INSERT_ID();
 
@@ -572,8 +572,8 @@ BEGIN
 
     SELECT
         m.id_medida,
-        INITCAP(m.nombre) nombre, tdm.tipo_dato,
-        INITCAP(m.unidad_medida) unidad_medida,
+        m.nombre nombre, tdm.tipo_dato,
+        m.unidad_medida unidad_medida,
         m.valor_minimo, m.valor_maximo,
         if(m.obligatorio,'Sí','No') obligatorio
     FROM medida m
@@ -589,8 +589,8 @@ BEGIN
 
     SELECT
         m.id_medida,
-        INITCAP(m.nombre) nombre, tdm.id_tipo_dato, tdm.tipo_dato,
-        INITCAP(m.unidad_medida) unidad_medida,
+        m.nombre nombre, tdm.id_tipo_dato, tdm.tipo_dato,
+        m.unidad_medida unidad_medida,
         m.valor_minimo, m.valor_maximo, m.obligatorio,
         if(m.obligatorio,'Sí','No') obligatorio_txt
     FROM medida m
@@ -638,7 +638,7 @@ BEGIN
 
         UPDATE medida m
         SET
-            m.nombre=INITCAP(p_nombre),
+            m.nombre=p_nombre,
             m.id_tipo_dato=p_id_tipo_dato,
             m.unidad_medida=p_unidad_medida,
             m.valor_minimo=p_valor_minimo,
@@ -2615,7 +2615,7 @@ BEGIN
     OR (p.carnet like concat('%',p_id,'%') AND p.carnet is not null AND p_id!='')
     OR (p.nov like concat('%',p_id,'%') AND p.nov is not null AND p_id!='')
     OR (p.regpersonal like concat('%',p_id,'%') AND p.regpersonal is not null AND p_id!='')
-    OR (UPPER(CONCAT(p.nombre,' ',p.apellido)) LIKE CONCAT('%',REPLACE(UPPER(p_id COLLATE utf8_unicode_ci), ' ', '%'),'%')) )
+    OR (UPPER(CONCAT(p.nombre,' ',p.apellido)) LIKE CONCAT('%',REPLACE(UPPER(p_id /*COLLATE utf8_unicode_ci*/), ' ', '%'),'%')) )
     ORDER BY nombre
         limit 50;
 
@@ -4166,7 +4166,7 @@ BEGIN
     SELECT pm.id_persona_medida, date_format(pm.creado,'%d/%m/%Y') fecha,
            date_format(pm.creado,'%H:%i') hora, c2.nombre clinica,
            CONCAT(p2.nombre,' ',p2.apellido) atiende, m.nombre medida,
-           pm.valor, m.unidad_medida unidad FROM persona_medida pm
+           pm.valor, if(m.id_tipo_dato=8706,'', m.unidad_medida) unidad FROM persona_medida pm
     JOIN persona p on pm.id_persona = p.id_persona
     LEFT JOIN cita c on pm.id_cita = c.id_cita
     JOIN medida m on pm.id_medida = m.id_medida
@@ -4187,7 +4187,7 @@ BEGIN
     SELECT pm.id_persona_medida, date_format(pm.creado,'%d/%m/%Y') fecha,
            date_format(pm.creado,'%H:%i') hora, c2.nombre clinica,
            CONCAT(p2.nombre,' ',p2.apellido) atiende, m.nombre medida,
-           pm.valor, m.unidad_medida unidad FROM persona_medida pm
+           pm.valor, if(m.id_tipo_dato=8706,'', m.unidad_medida) unidad FROM persona_medida pm
     JOIN persona p on pm.id_persona = p.id_persona
     LEFT JOIN cita c on pm.id_cita = c.id_cita
     JOIN medida m on pm.id_medida = m.id_medida

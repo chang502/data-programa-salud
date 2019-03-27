@@ -234,7 +234,7 @@ CREATE TABLE programasalud.medida
     id_medida       INT(20) AUTO_INCREMENT NOT NULL,
     nombre          VARCHAR(50) NOT NULL,
     id_tipo_dato    INT NOT NULL,
-    unidad_medida   VARCHAR(50) NOT NULL,
+    unidad_medida   VARCHAR(1000) NOT NULL,
     valor_minimo    VARCHAR(50) NULL,
     valor_maximo    VARCHAR(50) NULL,
     obligatorio     BOOLEAN NOT NULL,
