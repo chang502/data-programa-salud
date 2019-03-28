@@ -299,8 +299,8 @@ BEGIN
         SELECT o_result, id_especialidad, FALSE FROM programasalud.especialidad;
 
 
-        INSERT INTO programasalud.clinica_doctor (id_clinica, id_doctor, activo)
-        SELECT id_clinica, o_result, FALSE
+        INSERT INTO programasalud.clinica_doctor (id_clinica, id_doctor)
+        SELECT id_clinica, o_result
         FROM clinica;
 
         SET o_mensaje = 'Registro ingresado correctamente';
@@ -319,8 +319,8 @@ BEGIN
 
             DELETE FROM doctor_especialidad WHERE id_doctor =o_result;
 
-            INSERT INTO programasalud.clinica_doctor (id_clinica, id_doctor, activo)
-            SELECT id_clinica, o_result, FALSE
+            INSERT INTO programasalud.clinica_doctor (id_clinica, id_doctor)
+            SELECT id_clinica, o_result
             FROM clinica;
 
             SET o_result = 1;
@@ -554,8 +554,8 @@ BEGIN
 
     SET o_result = LAST_INSERT_ID();
 
-    INSERT INTO programasalud.clinica_medida (id_clinica, id_medida, activo)
-    SELECT id_clinica, o_result, FALSE
+    INSERT INTO programasalud.clinica_medida (id_clinica, id_medida)
+    SELECT id_clinica, o_result
     FROM clinica;
 
 
@@ -696,7 +696,7 @@ END;
 
 -- ---------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE PROCEDURE programasalud.create_clinic (IN p_nombre VARCHAR(50), IN p_ubicacion VARCHAR(50), IN p_descripcion VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+CREATE OR REPLACE PROCEDURE programasalud.create_clinic(IN p_nombre VARCHAR(50), IN p_ubicacion VARCHAR(50), IN p_descripcion VARCHAR(255), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
     DECLARE v_temp INT;
@@ -730,13 +730,17 @@ BEGIN
 
     SET o_result = LAST_INSERT_ID();
 
-    INSERT INTO programasalud.clinica_doctor (id_clinica, id_doctor, activo)
-    SELECT o_result, id_doctor, FALSE
+    INSERT INTO programasalud.clinica_doctor (id_clinica, id_doctor)
+    SELECT o_result, id_doctor
     FROM doctor;
 
-    INSERT INTO programasalud.clinica_medida (id_clinica, id_medida, activo)
-    SELECT o_result, id_medida, FALSE
+    INSERT INTO programasalud.clinica_medida (id_clinica, id_medida)
+    SELECT o_result, id_medida
     FROM medida;
+
+    INSERT INTO programasalud.clinica_accion (id_clinica, id_accion)
+    SELECT o_result, id_accion
+    FROM accion;
 
 
     SET o_mensaje = 'Registro ingresado correctamente';
@@ -3891,6 +3895,23 @@ END;
 
 
 
+CREATE OR REPLACE PROCEDURE programasalud.get_appointment_actions(IN p_id_cita INT, IN p_id_usuario VARCHAR(50))
+BEGIN
+
+    SELECT ca.id_accion, a.nombre
+    from clinica_accion ca
+    JOIN clinica c on ca.id_clinica = c.id_clinica AND c.activo
+    JOIN accion a on ca.id_accion = a.id_accion AND a.activo
+    JOIN cita c2 on c.id_clinica = c2.id_clinica AND c2.activo AND c2.id_cita=p_id_cita
+    JOIN doctor d on c2.id_doctor = d.id_doctor AND d.activo
+    JOIN usuario u on d.id_usuario = u.id_usuario AND u.id_usuario=p_id_usuario AND u.activo
+    WHERE ca.activo;
+
+END;
+
+
+
+
 
 
 
@@ -4021,6 +4042,11 @@ BEGIN
     ELSE
         INSERT INTO accion(nombre)VALUES(INITCAP(p_nombre));
         SET o_result = LAST_INSERT_ID();
+
+        INSERT INTO programasalud.clinica_accion (id_clinica, id_accion)
+        SELECT id_clinica, o_result
+        FROM clinica;
+
         SET o_mensaje = 'Registro ingresado correctamente';
     END IF;
     COMMIT;
@@ -5143,3 +5169,53 @@ END;
 
 
 
+
+
+CREATE OR REPLACE PROCEDURE programasalud.get_clinica_acciones(IN p_id_clinica VARCHAR(50))
+BEGIN
+
+    SELECT ca.id_clinica_accion, a.nombre,
+           ca.activo
+    FROM clinica_accion ca
+    JOIN accion a on ca.id_accion = a.id_accion
+    WHERE a.activo AND ca.id_clinica=p_id_clinica;
+
+END;
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.update_clinica_accion(IN p_id_clinica_accion VARCHAR(50), IN p_activo VARCHAR(50), OUT o_result INT, OUT o_mensaje VARCHAR(100))
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            GET DIAGNOSTICS CONDITION 1
+                @p1 = RETURNED_SQLSTATE, @p2 = MESSAGE_TEXT;
+            ROLLBACK;
+            SET o_mensaje=CONCAT('Ocurrió un error: ',@p2);
+        END;
+
+    START TRANSACTION;
+
+    SELECT COUNT(*) INTO o_result
+    FROM clinica_accion c
+    WHERE c.id_clinica_accion=p_id_clinica_accion;
+
+    if o_result > 0 THEN
+
+        UPDATE
+            clinica_accion c
+        SET
+            c.activo=(p_activo='true')
+        WHERE
+            c.id_clinica_accion=p_id_clinica_accion;
+
+        SET o_result = 1;
+        SET o_mensaje = 'Registro actualizado correctamente';
+    ELSE
+        SET o_result = -1;
+        SET o_mensaje = 'Registro no existe';
+    END IF;
+    COMMIT;
+
+END;

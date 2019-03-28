@@ -258,17 +258,13 @@ CREATE TABLE programasalud.clinica_doctor
     id_clinica_doctor  INT AUTO_INCREMENT NOT NULL,
     id_clinica         INT NOT NULL,
     id_doctor          INT NOT NULL,
-    activo             BOOLEAN NOT NULL,
+    activo             BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT FK_clinica_doctor_clinica FOREIGN KEY(id_clinica)REFERENCES programasalud.clinica (id_clinica) ON DELETE CASCADE,
+    CONSTRAINT FK_clinica_doctor_doctor FOREIGN KEY(id_doctor)REFERENCES programasalud.doctor (id_doctor) ON DELETE CASCADE,
     PRIMARY KEY(id_clinica_doctor)
 );
 
-ALTER TABLE programasalud.clinica_doctor
-    ADD CONSTRAINT FK_clinica_doctor_clinica FOREIGN KEY(id_clinica)
-        REFERENCES programasalud.clinica (id_clinica) ON DELETE CASCADE;
 
-ALTER TABLE programasalud.clinica_doctor
-    ADD CONSTRAINT FK_clinica_doctor_doctor FOREIGN KEY(id_doctor)
-        REFERENCES programasalud.doctor (id_doctor) ON DELETE CASCADE;
 
 
 
@@ -281,17 +277,42 @@ CREATE TABLE programasalud.clinica_medida
     id_clinica_medida  INT AUTO_INCREMENT NOT NULL,
     id_clinica         INT NOT NULL,
     id_medida          INT NOT NULL,
-    activo             BOOLEAN NOT NULL,
+    activo             BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT FK_clinica_medida_clinica FOREIGN KEY(id_clinica) REFERENCES programasalud.clinica (id_clinica) ON DELETE CASCADE,
+    CONSTRAINT FK_clinica_medida_medida FOREIGN KEY(id_medida) REFERENCES programasalud.medida (id_medida) ON DELETE CASCADE,
     PRIMARY KEY(id_clinica_medida)
 );
 
-ALTER TABLE programasalud.clinica_medida
-    ADD CONSTRAINT FK_clinica_medida_clinica FOREIGN KEY(id_clinica)
-        REFERENCES programasalud.clinica (id_clinica) ON DELETE CASCADE;
 
-ALTER TABLE programasalud.clinica_medida
-    ADD CONSTRAINT FK_clinica_medida_medida FOREIGN KEY(id_medida)
-        REFERENCES programasalud.medida (id_medida) ON DELETE CASCADE;
+
+
+DROP TABLE IF EXISTS programasalud.accion;
+
+CREATE TABLE programasalud.accion
+(
+    id_accion               INT AUTO_INCREMENT NOT NULL,
+    nombre                  VARCHAR(150) NOT NULL,
+    activo                  BOOLEAN NOT NULL DEFAULT TRUE,
+    PRIMARY KEY(id_accion)
+);
+
+
+
+
+DROP TABLE IF EXISTS programasalud.clinica_accion;
+
+CREATE TABLE programasalud.clinica_accion
+(
+    id_clinica_accion  INT AUTO_INCREMENT NOT NULL,
+    id_clinica         INT NOT NULL,
+    id_accion          INT NOT NULL,
+    activo             BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT FK_clinica_acion_clinica FOREIGN KEY(id_clinica)REFERENCES programasalud.clinica (id_clinica) ON DELETE CASCADE,
+    CONSTRAINT FK_clinica_accion_accion FOREIGN KEY(id_accion)REFERENCES programasalud.accion (id_accion) ON DELETE CASCADE,
+    PRIMARY KEY(id_clinica_accion)
+);
+
+
 
 
 
@@ -665,36 +686,6 @@ ALTER TABLE programasalud.flujo_cita
 **************************************************************
 **************************************************************
  */
-
-
-
-
-
-
-
-
-
-
-DROP TABLE IF EXISTS programasalud.accion;
-
-CREATE TABLE programasalud.accion
-(
-    id_accion               INT AUTO_INCREMENT NOT NULL,
-    nombre                  VARCHAR(150) NOT NULL,
-    activo                  BOOLEAN NOT NULL DEFAULT TRUE,
-    PRIMARY KEY(id_accion)
-);
-
-
-
-
-
-
-
-
-
-
-
 
 
 
