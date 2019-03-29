@@ -521,7 +521,7 @@ END;
 
 -- ---------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE PROCEDURE programasalud.create_measurement (IN p_nombre VARCHAR(50), IN p_id_tipo_dato INT(20), IN p_unidad_medida VARCHAR(50), IN p_valor_minimo VARCHAR(50),
+CREATE OR REPLACE PROCEDURE programasalud.create_measurement (IN p_nombre VARCHAR(50), IN p_id_tipo_dato INT(20), IN p_unidad_medida VARCHAR(1000), IN p_valor_minimo VARCHAR(50),
                                                    IN p_valor_maximo VARCHAR(50), IN p_obligatorio VARCHAR(1), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
@@ -602,7 +602,7 @@ END;
 
 -- ---------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE PROCEDURE programasalud.update_measurement ( IN p_id_medida INT(20), IN p_nombre VARCHAR(50), IN p_id_tipo_dato INT(20), IN p_unidad_medida VARCHAR(50), IN p_valor_minimo VARCHAR(50),
+CREATE OR REPLACE PROCEDURE programasalud.update_measurement ( IN p_id_medida INT(20), IN p_nombre VARCHAR(50), IN p_id_tipo_dato INT(20), IN p_unidad_medida VARCHAR(1000), IN p_valor_minimo VARCHAR(50),
                                                     IN p_valor_maximo VARCHAR(50), IN p_obligatorio VARCHAR(1), OUT o_result INT, OUT o_mensaje VARCHAR(100))
 BEGIN
 
@@ -1247,7 +1247,8 @@ BEGIN
         b.ubicacion,
         DATE_FORMAT(b.fecha_mantenimiento, '%d/%m/%Y') fecha_mantenimiento,
         b.estado,
-        b.observaciones
+        b.observaciones,
+        DATE_FORMAT(b.creado, '%d/%m/%Y %H:%i:%s') creado
     FROM
         bebedero b
     WHERE
@@ -1916,7 +1917,8 @@ BEGIN
         b.nombre,
         b.descripcion,
         b.especialidad,
-        b.estado
+        b.estado,
+        DATE_FORMAT(b.creado, '%d/%m/%Y %H:%i:%s') creado
     FROM
         seleccion b
     WHERE
@@ -4246,7 +4248,7 @@ END;
 
 
 
-CREATE OR REPLACE PROCEDURE programasalud.assign_discipline (IN p_cui NUMERIC(13,0), IN p_nov NUMERIC(10,0), IN p_nombre VARCHAR(500), IN p_apellido VARCHAR(500),
+CREATE OR REPLACE PROCEDURE programasalud.assign_discipline (IN p_carnet NUMERIC(13,0), IN p_nov NUMERIC(10,0), IN p_nombre VARCHAR(500), IN p_apellido VARCHAR(500),
                                                              IN p_fecha_nacimiento VARCHAR(10), IN p_sexo VARCHAR(1), IN p_email VARCHAR(50), IN p_telefono VARCHAR(8),
                                                              IN p_telefono_emergencia VARCHAR(8), IN p_contacto_emergencia VARCHAR(150),
                                                              IN p_carrera VARCHAR(2), IN p_peso INT, IN p_estatura DECIMAL(5,2),
@@ -4288,7 +4290,7 @@ BEGIN
     -- revisar si existe la persona
     SELECT count(1), coalesce(id_persona,-1) INTO v_flg_existe_persona, v_temp
     FROM persona WHERE
-       (cui=p_cui AND cui IS NOT NULL)
+       (carnet=p_carnet AND carnet IS NOT NULL)
         OR (nov=p_nov AND nov IS NOT NULL);
 
     -- revisar si existe asignación para la persona (si existe)
@@ -4310,7 +4312,7 @@ BEGIN
 
         -- crear la persona
         IF v_flg_existe_persona= 0 THEN
-            SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_telefono,p_cui,p_nov, null, p_carrera);
+            SET v_temp = create_or_update_student_from_cc(p_nombre,p_apellido, p_fecha_nacimiento, p_sexo,p_email,p_telefono,null,p_nov, p_carnet, p_carrera);
             UPDATE persona p SET source = 'DEPORTES' WHERE p.id_persona=v_temp;
         END IF;
 

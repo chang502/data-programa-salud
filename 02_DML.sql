@@ -31,77 +31,121 @@ delete from reporte_parametro where activo;
 delete from reporte_rol where activo;
 delete from reporte where activo;
 
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8701, 'Reporte de citas','rpt_citas');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8701,8701);
+INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES 
+(8701, 'Citas','rpt_citas'),
+(8702, '[Admin] Citas','rpt_citas_admin'),
+(8703, 'Espacios de Convivencia','rpt_espacios_convivencia'),
+(8704, 'Personas federadas','rpt_personas_federadas'),
+(8705, 'Personas con enfermedades crónicas','rpt_personas_enfermedades'),
+(8706, 'Personas con capacidades especiales','rpt_personas_cualidades_especiales'),
+(8707, 'Bebederos','rpt_bebederos'),
+(8708, 'Capacitaciones','rpt_capacitaciones'),
+(8709, 'Capacitaciones con asistentes','rpt_capacitaciones_asistentes'),
+(8710, 'Selecciones','rpt_selecciones'),
+(8711, 'Selecciones e integrantes','rpt_seleccion_integrantes'),
+(8712, 'Campeonatos','rpt_campeonatos'),
+(8713, 'Asignaciones deportes por semestre','rpt_asignacion_deportes_semestre'),
+(8714, 'Asignaciones deportes por fecha','rpt_asignacion_deportes_fecha'),
+(8715, 'Disciplinas deportivas','rpt_disciplinas'),
+(8716, 'Medidas','rpt_medidas'),
+(8717, '[Admin] Medidas','rpt_medidas_admin'),
+(8718, '[Admin] Espacios de Convivencia','rpt_espacios_convivencia_admin'),
+(8719, '[Admin] Bebederos','rpt_bebederos_admin'),
+(8720, '[Admin] Selecciones','rpt_selecciones_admin'),
+(8721, '[Deportes] Selecciones','rpt_selecciones_deportes'),
+(8722, '[Admin] Capacitaciones','rpt_capacitaciones_admin'),
+(8723, '[Admin] Capacitaciones con asistentes','rpt_capacitaciones_asistentes_admin'),
+(8724, '[Admin] Campeonatos','rpt_campeonatos_admin'),
+(8725, '[Deportes] Campeonatos','rpt_campeonatos_deportes'),
+(8726, '[Admin] Selecciones e integrantes','rpt_seleccion_integrantes_admin'),
+(8727, '[Deportes] Selecciones e integrantes','rpt_seleccion_integrantes_deportes'),
+(8728, 'Acciones','rpt_acciones'),
+(8729, '[Admin] Acciones','rpt_acciones_admin');
+
+
+INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES 
+(8701,8701),
+(8702,8704),
+(8703,8705),
+(8704,8701),(8704,8702),(8704,8703),(8704,8704),
+(8705,8701),(8705,8702),(8705,8703),(8705,8704),
+(8706,8701),(8706,8702),(8706,8703),(8706,8704),
+(8707,8703),
+(8708,8703),
+(8709,8703),
+(8710,8703),
+(8711,8703),
+(8712,8703),
+(8713,8702),(8713,8704),
+(8714,8702),(8714,8704),
+(8715,8702),(8715,8704),
+(8716,8701),
+(8717,8704),
+(8718,8704),
+(8719,8704),
+(8720,8704),
+(8721,8702),
+(8722,8704),
+(8723,8704),
+(8724,8704),
+(8725,8702),
+(8726,8704),
+(8727,8702),
+(8728,8701),
+(8729,8704);
+
+
+
 INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
-            (8701, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
-            (8701, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
+(8701, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8701, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8702, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8702, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8703, 'Año','anio','numberfield',1,'{ hideTrigger: true,allowDecimals: false,enforceMaxLength: true,minValue: 1900,maxValue: 2999}'),
+(8707, 'Fecha ingreso entre','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8707, 'y','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8708, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8708, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8709, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8709, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8712, 'Fecha Participación Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8712, 'Fecha Participación Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8713, 'Semestre','semestre','numberfield',1,'{ hideTrigger: true,allowDecimals: false,enforceMaxLength: true,minValue: 1,maxValue: 2}'),
+(8713, 'Año','anio','numberfield',2,'{ hideTrigger: true,allowDecimals: false,enforceMaxLength: true,minValue: 2018,maxValue: 2999}'),
+(8714, 'Fecha Asignación inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8714, 'Fecha Asignación Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8716, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8716, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8717, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8717, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8718, 'Año','anio','numberfield',1,'{ hideTrigger: true,allowDecimals: false,enforceMaxLength: true,minValue: 1900,maxValue: 2999}'),
+(8719, 'Fecha ingreso entre','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8719, 'y','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8722, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8722, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8723, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8723, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8724, 'Fecha Participación Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8724, 'Fecha Participación Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8725, 'Fecha Participación Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8725, 'Fecha Participación Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8728, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8728, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}'),
+(8729, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
+(8729, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
 
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8702, '[Admin] Reporte de citas','rpt_citas_admin');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8702,8704);
-INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
-            (8702, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
-            (8702, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
-
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8703, 'Espacios de Convivencia','rpt_espacios_convivencia');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8703,8705),(8703,8704);
-INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
-            (8703, 'Año','anio','numberfield',1,'{ hideTrigger: true,allowDecimals: false,enforceMaxLength: true,minValue: 1900,maxValue: 2999}');
-
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8704, 'Personas federadas','rpt_personas_federadas');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8704,8701),(8704,8702),(8704,8703),(8704,8704);
-
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8705, 'Personas con enfermedades crónicas','rpt_personas_enfermedades');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8705,8701),(8705,8702),(8705,8703),(8705,8704);
-
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8706, 'Personas con capacidades especiales','rpt_personas_cualidades_especiales');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8706,8701),(8706,8702),(8706,8703),(8706,8704);
-
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8707, 'Reporte de bebederos','rpt_bebederos');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8707,8703),(8707,8704);
-INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
-            (8707, 'Fecha mant. entre','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
-            (8707, 'y','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
-
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8708, 'Reporte de capacitaciones','rpt_capacitaciones');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8708,8703),(8708,8704);
-INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
-            (8708, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
-            (8708, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
 
 
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8709, 'Reporte de capacitaciones con asistentes','rpt_capacitaciones_asistentes');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8709,8703),(8709,8704);
-INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
-            (8709, 'Fecha Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
-            (8709, 'Fecha Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
 
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8710, 'Selecciones','rpt_selecciones');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8710,8702),(8710,8703),(8710,8704);
 
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8711, 'Selecciones e integrantes','rpt_seleccion_integrantes');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8711,8702),(8711,8703),(8711,8704);
 
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8712, 'Campeonatos','rpt_campeonatos');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8712,8702),(8712,8703),(8712,8704);
-INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
-            (8712, 'Fecha Participación Inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
-            (8712, 'Fecha Participación Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
 
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8713, 'Asignaciones deportes por semestre','rpt_asignacion_deportes_semestre');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8713,8702),(8713,8704);
-INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
-            (8713, 'Semestre','semestre','numberfield',1,'{ hideTrigger: true,allowDecimals: false,enforceMaxLength: true,minValue: 1,maxValue: 2}'),
-            (8713, 'Año','anio','numberfield',2,'{ hideTrigger: true,allowDecimals: false,enforceMaxLength: true,minValue: 2018,maxValue: 2999}');
 
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8714, 'Asignaciones deportes por fecha','rpt_asignacion_deportes_fecha');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8714,8702),(8714,8704);
-INSERT INTO programasalud.reporte_parametro (id_reporte, display_name, var_name, var_type, orden, moreinfo) VALUES
-            (8714, 'Fecha Asignación inicio','fecha_inicio','datefield',1,'{ "emptyText" : "Fecha Inicio"}'),
-            (8714, 'Fecha Asignación Fin','fecha_fin','datefield',2,'{ "emptyText" : "Fecha Fin"}');
 
-INSERT INTO programasalud.reporte (id_reporte, nombre, sp_name) VALUES (8715, 'Disciplinas deportivas','rpt_disciplinas');
-INSERT INTO programasalud.reporte_rol(id_reporte, id_rol) VALUES (8715,8702),(8715,8704);
+
+
+
+
 
 
 
@@ -122,7 +166,7 @@ INSERT INTO programasalud.tipo_dato_medida (id_tipo_dato, tipo_dato, activo) VAL
 INSERT INTO programasalud.tipo_dato_medida (id_tipo_dato, tipo_dato, activo) VALUES (8702, 'Decimal',TRUE);
 INSERT INTO programasalud.tipo_dato_medida (id_tipo_dato, tipo_dato, activo) VALUES (8703, 'Texto',TRUE);
 INSERT INTO programasalud.tipo_dato_medida (id_tipo_dato, tipo_dato, activo) VALUES (8704, 'Fecha',TRUE);
-INSERT INTO programasalud.tipo_dato_medida (id_tipo_dato, tipo_dato, activo) VALUES (8705, 'Sí/No',TRUE);
+INSERT INTO programasalud.tipo_dato_medida (id_tipo_dato, tipo_dato, activo) VALUES (8705, 'Sí/No',FALSE);
 INSERT INTO programasalud.tipo_dato_medida (id_tipo_dato, tipo_dato, activo) VALUES (8706, 'Lista',TRUE);
 
 
@@ -267,20 +311,25 @@ VALUES
 
 
 
+
+
 INSERT INTO programasalud.lugar_convivencia (id_categoria_convivencia, nombre) VALUES
-(8701,'Edificio T-3'),(8701,'Edificio T-1'),(8701,'Edificio T-4'),(8701,'Edificio T-5'),
-(8701,'Edificio Caldera T-5'),(8701,'Edificio T-6'),(8701,'Edificio T-7'),(8701,'Edificio S-11'),
-(8701,'Edificio S-12'),(8701,'Edificio Cii T-5'),(8701,'Edificio Cii nuevo'),(8701,'Edificio Cii sección madera'),
-(8701,'Edificio Cii bodega bombas agua'),(8701,'Edificio Eris'),(8701,'Edificio Suelos'),(8701,'Edificio EPS'),
-(8701,'Edificio Carpintería'),(8701,'Edificio Almacén'),(8701,'Edificio Mantenimiento'),(8701,'Edificio Ing. Corzo Agregados'),
-(8701,'Bodega bienes Inventario'),(8701,'Bodega Postgrados'),(8702,'Jardines internos este Vela'),(8702,'Área juegos niños'),
-(8702,'Área ranchitos este T-4'),(8702,'Área ranchitos sur T-3 - T-5'),(8702,'Área ranchitos norte T-7'),(8702,'Cancha'),
-(8702,'Jardines Ingeniería (T-3 / T-5 / T-6 / T-4)'),(8702,'Jardines norte T-3'),(8702,'Jardines sur T-3'),
-(8702,'Jardines sur T-1'),(8702,'Jardines Vela sur'),(8702,'Jardines Vela oeste'),(8702,'Prefabricados'),
-(8702,'Pileta'),(8703,'Parqueo S-11 para post'),(8703,'Parqueo T-5 para prof'),(8703,'Parqueo T-1 para prof'),
-(8703,'Parqueos Cii'),(8703,'Parqueos perímetro (T-3, T-5, T-6, T-7)'),(8703,'Garitas parqueos (T-3, T-5, T-6, T-7)'),
-(8703,'Garita T-1'),(8704,'Bancas'),(8704,'Postes'),(8704,'Toldos'),(8704,'Rampas'),(8705,'Pantallas'),(8705,'Cañoneras'),
-(8705,'Balanza');
+(8701,'Edificio T-3'),(8701,'Edificio T-1'),(8701,'Edificio T-4'),(8701,'Edificio T-5'),(8701,'Edificio Caldera T-5'),
+(8701,'Edificio T-6'),(8701,'Edificio T-7'),(8701,'Edificio S-11'),(8701,'Edificio S-12'),(8701,'Edificio Cii T-5'),
+(8701,'Edificio Cii nuevo'),(8701,'Edificio Cii sección madera'),(8701,'Edificio Cii bodega bombas agua'),
+(8701,'Edificio Eris'),(8701,'Edificio Suelos'),(8701,'Edificio EPS'),(8701,'Edificio Carpintería'),
+(8701,'Edificio Almacén'),(8701,'Edificio Mantenimiento'),(8701,'Edificio Ing. Corzo (Prefabricados)'),
+(8701,'Bodega Bienes Inventario'),(8701,'Bodega Postgrados'),(8702,'Jardines internos este Vela'),
+(8702,'Área juegos niños'),(8702,'Área ranchitos este T-4'),(8702,'Área ranchitos sur T-3 - T-5'),
+(8702,'Área ranchitos norte T-7'),(8702,'Cancha'),(8702,'Jardines Ingeniería T-3'),(8702,'Jardines Ingeniería T-4'),
+(8702,'Jardines Ingeniería T-5'),(8702,'Jardines Ingeniería T-6'),(8702,'Jardines norte T-3'),(8702,'Jardines sur T-3'),
+(8702,'Jardines sur T-1'),(8702,'Jardines Vela sur'),(8702,'Jardines Vela oeste'),(8702,'Prefabricados'),(8702,'Pileta'),
+(8703,'Parqueo S-11 para postgrado'),(8703,'Parqueo T-5 para profesores'),(8703,'Parqueo T-1 para profesores'),
+(8703,'Parqueos Cii'),(8703,'Parqueos Perímetro T-3'),(8703,'Parqueos Perímetro T-4'),(8703,'Parqueos Perímetro T-5'),
+(8703,'Parqueos Perímetro T-6'),(8703,'Garitas parqueos T-3'),(8703,'Garitas parqueos T-4'),(8703,'Garitas parqueos T-5'),
+(8703,'Garitas parqueos T-6'),(8703,'Garita T-1'),(8704,'Bancas'),(8704,'Postes'),(8704,'Toldos'),(8704,'Rampas'),
+(8705,'Pantallas'),(8705,'Cañoneras'),(8705,'Balanza');
+
 
 
 insert into medida (id_medida, nombre, id_tipo_dato, unidad_medida, valor_minimo, valor_maximo, obligatorio, activo) VALUES
