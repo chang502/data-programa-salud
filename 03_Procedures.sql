@@ -3523,8 +3523,8 @@ END;
 
 CREATE OR REPLACE PROCEDURE programasalud.get_person_email(IN p_id_persona INT)
 BEGIN
-    /*SELECT id_persona, email FROM persona WHERE id_persona = p_id_persona;*/
-    SELECT id_persona, 'andres.chang.h@gmail.com' email FROM persona WHERE id_persona = p_id_persona;
+    SELECT id_persona, email FROM persona WHERE id_persona = p_id_persona;
+    /*SELECT id_persona, 'andres.chang.h@gmail.com' email FROM persona WHERE id_persona = p_id_persona;*/
 END;
 
 
