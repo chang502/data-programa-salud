@@ -5,10 +5,10 @@ CREATE DATABASE programasalud CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 DROP USER IF EXISTS saludfiusac;
 
-# CREATE OR REPLACE USER 'saludfiusac' IDENTIFIED BY 'progsalud';
+# CREATE OR REPLACE USER 'saludfiusac' IDENTIFIED BY 'prosalud2019';
 
 
-# grant all privileges on programasalud.* to saludfiusac@'%' identified by 'progsalud';
+# grant all privileges on programasalud.* to saludfiusac@'%' identified by 'prosalud2019';
 
 USE programasalud;
 
