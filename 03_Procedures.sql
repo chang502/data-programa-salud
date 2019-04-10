@@ -2607,6 +2607,22 @@ END;
 
 
 
+CREATE OR REPLACE PROCEDURE programasalud.get_person_details_by_cui (IN p_cui VARCHAR(13))
+BEGIN
+
+    SELECT p.id_persona, p.nombre, p.apellido,
+           DATE_FORMAT(p.fecha_nacimiento, '%Y-%m-%d') fecha_nacimiento, p.sexo, p.email,
+           p.cui, p.regpersonal, p.departamento
+    FROM programasalud.persona p
+    where p.cui = p_cui AND p.cui is not null;
+
+
+END;
+
+
+
+
+
 CREATE OR REPLACE PROCEDURE programasalud.search_person_by_any_id (IN p_id VARCHAR(13))
 BEGIN
 
