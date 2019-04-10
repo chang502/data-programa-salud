@@ -47,7 +47,7 @@ CREATE TABLE programasalud.persona
     id_persona        INT AUTO_INCREMENT NOT NULL,
     nombre            VARCHAR(500) COLLATE utf8_unicode_ci NOT NULL,
     apellido          VARCHAR(500) COLLATE utf8_unicode_ci NOT NULL,
-    fecha_nacimiento  DATE NOT NULL,
+    fecha_nacimiento  DATE NULL,
     sexo              CHAR(1) NOT NULL,
     email             VARCHAR(50) COLLATE utf8_unicode_ci NULL,
     telefono          VARCHAR(8) COLLATE utf8_unicode_ci NULL,
