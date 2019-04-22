@@ -5237,3 +5237,15 @@ BEGIN
     COMMIT;
 
 END;
+
+
+
+
+CREATE OR REPLACE PROCEDURE programasalud.valida_estudiante(IN p_carnet VARCHAR(9))
+BEGIN
+
+    select count(p.id_persona) asignado from persona p
+join persona_ficha pf on p.id_persona = pf.id_persona
+where p.carnet=p_carnet;
+
+END;
