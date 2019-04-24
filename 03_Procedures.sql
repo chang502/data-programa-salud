@@ -5018,6 +5018,7 @@ BEGIN
     (1,v_temp,p_peso),
     (2,v_temp,p_estatura);
 
+    SET o_result = v_temp;
     SET o_mensaje = 'Registro ingresado correctamente';
 
 
