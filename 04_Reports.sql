@@ -250,6 +250,7 @@ BEGIN
         SUBSTR(concat(if(flg_lunes=1,'Lun, ',''),if(flg_martes=1,'Mar, ',''),if(flg_miercoles=1,'Mié, ',''),if(flg_jueves=1,'Jue, ',''),if(flg_viernes=1,'Vie, ',''),if(flg_sabado=1,'Sáb, ','')) , 1 ,
         ((if(flg_lunes=1,1,0)+if(flg_martes=1,1,0)+if(flg_miercoles=1,1,0)+if(flg_jueves=1,1,0)+if(flg_viernes=1,1,0)+if(flg_sabado=1,1,0))*5-2))  "Días",
         concat(d.hora_inicio, ' - ', d.hora_fin)  "Horas", CONCAT(p2.nombre,' ',p2.apellido)  "Instructor",
+        p.carnet "Carnet", p.cui "CUI", p.nov "Número Orientación Vocacional",
         concat(p.nombre,' ',p.apellido) "Estudiante", c.nombre "Carrera", p.departamento "Departamento", p.fecha_nacimiento "Fecha Nacimiento", p.sexo "Sexo", p.telefono "Teléfono", p.email "Correo Electrónico"
     FROM asignacion_deportes ad
     JOIN disciplina d on ad.id_disciplina = d.id_disciplina AND d.activo
@@ -268,7 +269,8 @@ BEGIN
         SUBSTR(concat(if(flg_lunes=1,'Lun, ',''),if(flg_martes=1,'Mar, ',''),if(flg_miercoles=1,'Mié, ',''),if(flg_jueves=1,'Jue, ',''),if(flg_viernes=1,'Vie, ',''),if(flg_sabado=1,'Sáb, ','')) , 1 ,
         ((if(flg_lunes=1,1,0)+if(flg_martes=1,1,0)+if(flg_miercoles=1,1,0)+if(flg_jueves=1,1,0)+if(flg_viernes=1,1,0)+if(flg_sabado=1,1,0))*5-2))  "Días",
         concat(d.hora_inicio, ' - ', d.hora_fin)  "Horas", CONCAT(p2.nombre,' ',p2.apellido)  "Instructor",
-        concat(p.nombre,' ',p.apellido) "Estudiante", ad.creado "Fecha Asignación" , c.nombre "Carrera", p.departamento "Departamento", p.fecha_nacimiento "Fecha Nacimiento", p.sexo "Sexo", p.telefono "Teléfono", p.email "Correo Electrónico"
+        p.carnet "Carnet", p.cui "CUI", p.nov "Número Orientación Vocacional",
+           concat(p.nombre,' ',p.apellido) "Estudiante", ad.creado "Fecha Asignación" , c.nombre "Carrera", p.departamento "Departamento", p.fecha_nacimiento "Fecha Nacimiento", p.sexo "Sexo", p.telefono "Teléfono", p.email "Correo Electrónico"
     FROM asignacion_deportes ad
     JOIN disciplina d on ad.id_disciplina = d.id_disciplina AND d.activo
     JOIN persona p2 on d.id_persona = p2.id_persona
@@ -513,6 +515,7 @@ BEGIN
         s.descripcion "Descripción",
         s.especialidad "Especialidad",
         s.estado "Estado",
+         p.carnet "Carnet", p.cui "CUI", p.nov "Número Orientación Vocacional",
         concat(p.nombre,' ',p.apellido) "Integrante", c.nombre "Carrera", p.departamento "Departamento / Área", p.fecha_nacimiento "Fecha Nacimiento", p.sexo "Sexo", p.telefono "Teléfono", p.email "Correo Electrónico",
         concat(p2.nombre,' ',p2.apellido) "Ingresado por",
         u.id_usuario "Usuario Ingreso",
@@ -537,6 +540,7 @@ BEGIN
         s.descripcion "Descripción",
         s.especialidad "Especialidad",
         s.estado "Estado",
+         p.carnet "Carnet", p.cui "CUI", p.nov "Número Orientación Vocacional",
         concat(p.nombre,' ',p.apellido) "Integrante", c.nombre "Carrera", p.departamento "Departamento / Área", p.fecha_nacimiento "Fecha Nacimiento", p.sexo "Sexo", p.telefono "Teléfono", p.email "Correo Electrónico",
         s.creado "Fecha Ingreso"
     FROM seleccion s
